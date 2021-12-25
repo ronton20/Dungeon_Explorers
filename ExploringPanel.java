@@ -4,7 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 
-public class ExploringPanel extends JPanel{
+public class ExploringPanel extends JPanel implements ActionListener{
     
     Font titleFont = new Font("Helvetica", Font.BOLD, 55);
     Font normalFont = new Font("Helvetica", Font.BOLD, 25);
@@ -26,6 +26,8 @@ public class ExploringPanel extends JPanel{
 
     private final int BTN_WIDTH = WINDOW_WIDTH / 8;
     private final int BTN_HEIGHT = WINDOW_HEIGHT / 8;
+
+    Player player = new Player(WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2, WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2);
 
     public ExploringPanel(int width, int height, ActionListener lis){
 
@@ -114,5 +116,12 @@ public class ExploringPanel extends JPanel{
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         setBackground(bgColor);
+        player.draw(g);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // TODO Auto-generated method stub
+        
     }
 }
