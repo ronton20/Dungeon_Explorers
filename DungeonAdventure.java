@@ -42,8 +42,7 @@ public class DungeonAdventure implements ActionListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Image dimg = img.getScaledInstance(WINDOW_WIDTH, WINDOW_HEIGHT,
-        Image.SCALE_SMOOTH);
+        Image dimg = img.getScaledInstance(WINDOW_WIDTH, WINDOW_HEIGHT, Image.SCALE_SMOOTH);
 
         menuBackgroundImage.setIcon(new ImageIcon(dimg));
         menuBackgroundImage.setBounds(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
