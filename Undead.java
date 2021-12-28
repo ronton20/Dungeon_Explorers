@@ -1,15 +1,18 @@
 public abstract class Undead extends Monster{
     
-    private final double LIFE_STEAL_PERCENT = 1.2;
+    private final double LIFE_STEAL_PERCENT = 0.2;
 
     public Undead(int level) {
         super(level, 5);
     }
 
-    public void attack(Player player) {
+    public int attack(Player player) {
         int dmgDealt = this.DMG - (int)(this.DMG * player.getDamageReduction());
         player.takeDMG(dmgDealt);
-        lifeSteal(dmgDealt);
+        if((int)(Math.random() * 5) == 0)
+            lifeSteal(dmgDealt);
+
+        return dmgDealt;
     }
 
     private void lifeSteal(int dmgDealt) {

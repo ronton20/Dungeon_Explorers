@@ -4,7 +4,6 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
@@ -27,7 +26,7 @@ public class DungeonAdventure implements ActionListener {
     JLabel menuBackgroundImage = new JLabel();
 
     Font titleFont = new Font("Times New Roman", Font.PLAIN, 55);
-    Font normalFont = new Font("Helvetica", Font.BOLD, 25);
+    Font normalFont = new Font("Times New Roman", Font.BOLD, 25);
 
     private final int WINDOW_HEIGHT = 720;
     private final int WINDOW_WIDTH = 1080;
@@ -100,7 +99,9 @@ public class DungeonAdventure implements ActionListener {
     //this method starts the game
     private void startGame() {
         mainPanel.setVisible(false);
-        gamePanel.setBackground(Color.CYAN);
+        window.remove(gamePanel);
+        gamePanel = new ExploringPanel(WINDOW_WIDTH, WINDOW_HEIGHT, this);
+        gamePanel.setBackground(Color.BLACK);
         window.add(gamePanel, BorderLayout.CENTER);
         gamePanel.setVisible(true);
         btnStart.setVisible(false);
@@ -112,6 +113,7 @@ public class DungeonAdventure implements ActionListener {
     private void goToTitle() {
         gamePanel.closeMenu();
         gamePanel.setVisible(false);
+        window.remove(gamePanel);
         btnMenu.setVisible(false);
         btnStart.setVisible(true);
         buttonPanel.remove(btnMenu);
@@ -127,6 +129,9 @@ public class DungeonAdventure implements ActionListener {
         //opening/closing the main menu
         if(e.getSource().equals(btnMenu)) {
             if(gamePanel.isFighting()) return;
+            if(gamePanel.inSkillsTab()) return;
+            if(gamePanel.inShopTab()) return;
+            if(gamePanel.isGameOver()) return;
             if(!menuOpen) {
                 gamePanel.openMenu();
                 btnMenu.setText("Close");
@@ -139,16 +144,22 @@ public class DungeonAdventure implements ActionListener {
             }
         }
         //returning to the game
-        if(e.getSource().equals(gamePanel.btnResume)) {
+        if(e.getSource().equals(gamePanel.menuBoxPanel.btnResume)) {
             gamePanel.closeMenu();
             btnMenu.setText("Menu");
             menuOpen = false;
         }
         //returning to the title screen
-        if(e.getSource().equals(gamePanel.btnExitToTitle)) {
+        if(e.getSource().equals(gamePanel.menuBoxPanel.btnExitToTitle)) {
             btnMenu.setText("Menu");
             menuOpen = false;
             goToTitle();
+        }
+
+        if(gamePanel.isGameOver()) {
+            if(e.getSource().equals(gamePanel.gameOverPanel.btnQuit)) {
+                goToTitle();
+            }
         }
     }
 

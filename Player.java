@@ -1,7 +1,13 @@
 import java.awt.*;
-import javax.swing.*;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.Timer;
 import java.awt.event.*;
+import java.awt.image.*;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class Player {
 
@@ -19,7 +25,7 @@ public class Player {
     private int x;
     private int y;
 
-    public final int DEFAULT_MAX_EXP = 500;
+    public final int DEFAULT_MAX_EXP = 150;
     public final int DEFAULT_CURRENT_EXP = 0;
     public final int DEFAULT_MAX_HP = 120;
     public final int DEFAULT_CURRENT_HP = DEFAULT_MAX_HP;
@@ -28,10 +34,12 @@ public class Player {
     public final int DEFAULT_GOLD = 0;
     public final double DEFAULT_DMG_REDUCTION = 0;
 
-    private final int HP_PER_POINT = 15;
-    private final int DMG_PER_POINT = 3;
-    private final int SKILL_POINTS_PER_LEVEL = 3;
-    private final double EXP_PERCENT_PER_LEVEL = 1.2;
+    public static final int HP_PER_POINT = 5;
+    public static final int DMG_PER_POINT = 2;
+    public static final int HP_PER_LEVEL = 5;
+    public static final int DMG_PER_LEVEL = 2;
+    public static final int SKILL_POINTS_PER_LEVEL = 3;
+    private final double EXP_PERCENT_PER_LEVEL = 0.2;
 
     private int maxEXP;
     private int currentEXP;
@@ -49,13 +57,17 @@ public class Player {
     private int statusEffectDmg;
     private int healthPots;
 
+    private boolean dead;
+
     private int panelWidth;
     private int panelHeight;
 
     public boolean movedRoom;
     public boolean moving;
-    private boolean reachedDestination;
+    private boolean reachedGoal;
     private int direction;
+
+    JLabel character = new JLabel();
 
     Timer t;
     Graphics graphic;
@@ -74,32 +86,52 @@ public class Player {
         this.skillPointsHP = 0;
         this.skillPointsDMG = 0;
         this.skillPoints = 0;
-        this.healthPots = 0;
+        this.healthPots = 5;
         this.listener = lis;
         this.moving = false;
         this.statusEffect = Player.NONE;
         this.statusEffectDmg = 0;
+        this.reachedGoal = false;
+
+        dead = false;
 
         this.x = x;
         this.y = y;
 
+        BufferedImage img = null;
+        try {
+            img = ImageIO.read(new File("big-steve-face.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Image dimg = img.getScaledInstance(PLAYER_SIZE, PLAYER_SIZE, Image.SCALE_SMOOTH);
+
+        character.setSize(PLAYER_SIZE, PLAYER_SIZE);
+        character.setIcon(new ImageIcon(dimg));
+
         t = new Timer(10, listener);
     }
 
-    //----> getters <----
-    public int getCurrentHP() { return currentHP; }
-    public int getMaxHP() { return maxHP; }
-    public int getDMG() { return totalDMG; }
-    public int getLevel() { return level; }
-    public int getGold() { return gold; }
-    public int getDirection() { return direction; }
-    public int getX() { return x; }
-    public int getY() { return y; }
-    public int getSkillPoints() { return skillPoints; }
-    public int getPotions() { return healthPots; }
-    public double getDamageReduction() { return dmgReduction; }
-    public String getStatusEffect() { return statusEffect; }
-    public void clearStatusEffect() { statusEffect = Player.NONE; }
+    //----> Getters and Simple Methods <----
+    public int getCurrentHP()           { return currentHP; }
+    public int getMaxHP()               { return maxHP; }
+    public int getCurrentEXP()          { return currentEXP; }
+    public int getMaxEXP()              { return maxEXP; }
+    public int getDMG()                 { return totalDMG; }
+    public int getBaseDMG()             { return baseDMG; }
+    public int getLevel()               { return level; }
+    public int getGold()                { return gold; }
+    public int getDirection()           { return direction; }
+    public int getX()                   { return x; }
+    public int getY()                   { return y; }
+    public int getSkillPoints()         { return skillPoints; }
+    public int getPotions()             { return healthPots; }
+    public double getDamageReduction()  { return dmgReduction; }
+    public String getStatusEffect()     { return statusEffect; }
+    public int getStatusEffectDMG()     { return statusEffectDmg; }
+    public void clearStatusEffect()     { statusEffect = Player.NONE; }
+    public boolean isDead()             { return dead; }
+    public void goalReached()           { reachedGoal = true; }
 
     public int attack(Monster monster) {
         int dmgDealt = totalDMG;
@@ -115,6 +147,13 @@ public class Player {
             die();
     }
 
+    public boolean buyPotion(int price) {
+        if(gold < price) return false;
+        gold -= price;
+        healthPots++;
+        return true;
+    }
+
     public boolean usePotion() {
         if(healthPots == 0) return false;
         if(statusEffect != Player.NONE) {
@@ -125,10 +164,10 @@ public class Player {
         }
         if(currentHP == maxHP) return false;
         healthPots--;
-        double healPercent = 0.25;
+        double healPercent = 0.5;
         int missingHealth = maxHP - currentHP;
         if(missingHealth <= 20)
-            heal(10);
+            heal(20);
         else
             heal((int)(missingHealth * healPercent));
         return true;
@@ -140,6 +179,12 @@ public class Player {
             currentHP = maxHP;
     }
 
+    public void gainSpoils(Monster monster) {
+        this.gold += monster.getGold();
+        earnEXP(monster.getEXP());
+        System.out.println(currentEXP + "/" + maxEXP + ", Level: " + level);
+    }
+
     public void earnEXP(int exp) {
         currentEXP += exp;
         if(currentEXP >= maxEXP)
@@ -147,22 +192,40 @@ public class Player {
     }
 
     public void levelUp() {
+        if(statusEffect != Player.NONE) { statusEffect = Player.NONE; statusEffectDmg = 0; }
         skillPoints += SKILL_POINTS_PER_LEVEL;
         level++;
+        updateStats();
+        healthPots++;
+        if(!usePotion()) healthPots--;
         int tempExp = currentEXP - maxEXP;
-        maxEXP = (int)(maxEXP * EXP_PERCENT_PER_LEVEL);
+        maxEXP = maxEXP + (int)(maxEXP * EXP_PERCENT_PER_LEVEL);
         currentEXP = tempExp;
         if(currentEXP < 0)
             currentEXP = 0;
     }
 
     public void updateStats() {
-        int hpPercent = currentHP / maxHP;
-        maxHP = DEFAULT_MAX_HP + (HP_PER_POINT * skillPointsHP);
-        currentHP = maxHP * hpPercent;
+        double hpPercent = (maxHP - currentHP) / maxHP;
+        maxHP = DEFAULT_MAX_HP + (HP_PER_POINT * skillPointsHP) + (HP_PER_LEVEL * level);
+        currentHP = currentHP + (int)(maxHP * hpPercent);
 
-        baseDMG = DEFAULT_DMG + (DMG_PER_POINT * skillPointsDMG);
+        baseDMG = DEFAULT_DMG + (DMG_PER_POINT * skillPointsDMG) + (DMG_PER_LEVEL * level);
         totalDMG = baseDMG;     //***** needs to adjust when items are added *****
+    }
+
+    public void levelHP() {
+        if(skillPoints == 0) return;
+        skillPointsHP++;
+        skillPoints--;
+        updateStats();
+    }
+
+    public void levelDMG() {
+        if(skillPoints == 0) return;
+        skillPointsDMG++;
+        skillPoints--;
+        updateStats();
     }
 
     public void setStatusEffect(String type, int dmg) {
@@ -171,7 +234,8 @@ public class Player {
     }
 
     public void die() {
-
+        currentHP = 0;
+        dead = true;
     }
 
     public void move(int direction) {
@@ -211,7 +275,7 @@ public class Player {
         graphic = g;
         this.panelWidth = panelWidth;
         this.panelHeight = panelHeight;
-        reachedDestination = false;
+        this.reachedGoal = false;
         movedRoom = false;
         t.start();
         
@@ -236,8 +300,7 @@ public class Player {
         }
     }
 
-    public void draw(Graphics g) {
-        g.setColor(Color.BLACK);
-        g.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
+    public void draw() {
+        character.setLocation(x, y);
     }
 }

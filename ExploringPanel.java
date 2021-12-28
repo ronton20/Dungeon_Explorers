@@ -1,25 +1,41 @@
 
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Stack;
+import java.awt.image.*;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class ExploringPanel extends JPanel implements ActionListener{
     
     Font titleFont = new Font("Helvetica", Font.BOLD, 55);
     Font normalFont = new Font("Helvetica", Font.BOLD, 25);
 
-    JPanel menuPanel = new JPanel();
-    JPanel menuBoxPanel = new JPanel();
+    MenuPanel menuBoxPanel;
     FightPanel fightPanel;
+    LevelUpPanel lvlUpPanel;
+    SkillsPanel skillsTab;
+    ShopPanel shopPanel;
+    GameOverPanel gameOverPanel;
 
-    JButton btnResume = new JButton("Continue");
-    JButton btnExitToTitle = new JButton("Exit to Title Screen");
     JButton btnUp = new JButton();
     JButton btnDown = new JButton();
     JButton btnLeft = new JButton();
     JButton btnRight = new JButton();
+
+    JProgressBar expBar;
+    JButton openSkillTab = new JButton();
+    JButton openShopTab = new JButton();
+
+    Image imgSkills;
+    Image imgSkillsAvailable;
+    Image imgShop;
+
+    private final int ICON_SIZE = 50;
 
     ActionListener listener;
     Color bgColor;
@@ -45,6 +61,10 @@ public class ExploringPanel extends JPanel implements ActionListener{
     private int currentRoomY;
     private boolean goalRoomGenerated;
     private boolean fighting;
+    private boolean leveledUp;
+    private boolean inSkillTab;
+    private boolean inShopTab;
+    private boolean gameOver;
 
     private int from;
 
@@ -66,6 +86,10 @@ public class ExploringPanel extends JPanel implements ActionListener{
         bgColor = STARTING_COLOR;
         menuOpen = false;
         fighting = false;
+        leveledUp = false;
+        inSkillTab = false;
+        inShopTab = false;
+        this.gameOver = false;
         currentRoomX = START_ROOM_X;
         currentRoomY = START_ROOM_Y;
 
@@ -87,64 +111,81 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
         setLayout(null);
 
+        shopPanel = new ShopPanel(player, this);
+        this.add(shopPanel);
+
+        this.add(player.character);
+
+        //----> Setting up the EXP Bar <----
+        expBar = new JProgressBar(0, player.getMaxEXP());
+        expBar.setBackground(Color.DARK_GRAY);
+        expBar.setForeground(Color.YELLOW);
+        expBar.setValue(player.getCurrentEXP());
+        int expBarWidth = WINDOW_WIDTH / 3;
+        expBar.setBounds(WINDOW_WIDTH / 2 - expBarWidth / 2, 5, expBarWidth, 20);
+        expBar.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED, Color.GRAY, Color.DARK_GRAY));
+        this.add(expBar);
+
+
+        BufferedImage img = null;
+        try {
+            img = ImageIO.read(new File("Skills_Normal.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        imgSkills = img.getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
+
+        try {
+            img = ImageIO.read(new File("Skills_Available.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        imgSkillsAvailable = img.getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
+
+        try {
+            img = ImageIO.read(new File("Shop.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        imgShop = img.getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
+
+        openSkillTab.setIcon(new ImageIcon(imgSkills));
+        openSkillTab.setBounds(WINDOW_WIDTH - ICON_SIZE - 30, 10, ICON_SIZE, ICON_SIZE);
+        openSkillTab.addActionListener(this);
+
+        openShopTab.setIcon(new ImageIcon(imgShop));
+        openShopTab.setBounds(WINDOW_WIDTH - ICON_SIZE - 30, ICON_SIZE + 20, ICON_SIZE, ICON_SIZE);
+        openShopTab.addActionListener(this);
+
+        this.add(openSkillTab);
+        this.add(openShopTab);
+
         //----> Setting the button for going up <----
-        btnUp.setOpaque(false);
-        btnUp.setContentAreaFilled(false);
-        btnUp.setBorderPainted(true);
-        btnUp.addActionListener(this);
+        setupButtons(btnUp);
         btnUp.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, 0, BTN_WIDTH, BTN_HEIGHT);
         add(btnUp);
 
         //----> Setting the button for going down <----
-        btnDown.setOpaque(false);
-        btnDown.setContentAreaFilled(false);
-        btnDown.setBorderPainted(true);
-        btnDown.addActionListener(this);
+        setupButtons(btnDown);
         btnDown.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT - BTN_HEIGHT * 2, BTN_WIDTH, BTN_HEIGHT);
         add(btnDown);
 
         //----> Setting the button for going left <----
-        btnLeft.setOpaque(false);
-        btnLeft.setContentAreaFilled(false);
-        btnLeft.setBorderPainted(true);
-        btnLeft.addActionListener(this);
+        setupButtons(btnLeft);
         btnLeft.setBounds(0, WINDOW_HEIGHT / 2 - BTN_WIDTH / 2, BTN_HEIGHT, BTN_WIDTH);
         add(btnLeft);
 
         //----> Setting the button for going right <----
-        btnRight.setOpaque(false);
-        btnRight.setContentAreaFilled(false);
-        btnRight.setBorderPainted(true);
-        btnRight.addActionListener(this);
+        setupButtons(btnRight);
         btnRight.setBounds(WINDOW_WIDTH - BTN_HEIGHT, WINDOW_HEIGHT / 2 - BTN_WIDTH / 2, BTN_HEIGHT, BTN_WIDTH);
         add(btnRight);
 
-        //----> Setting the menu continue button <----
-        btnResume.setBackground(Color.DARK_GRAY);
-        btnResume.setForeground(Color.WHITE);
-        btnResume.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT / 2 - WINDOW_HEIGHT / 8, BTN_WIDTH, BTN_HEIGHT);
-        btnResume.setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
-        btnResume.setFont(normalFont);
-        btnResume.setFocusPainted(false);
-        btnResume.addActionListener(listener);
 
-        //----> Setting the menu exit button <----
-        btnExitToTitle.setBackground(Color.DARK_GRAY);
-        btnExitToTitle.setForeground(Color.WHITE);
-        btnResume.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT / 2 + WINDOW_HEIGHT / 8, BTN_WIDTH, BTN_HEIGHT);
-        btnExitToTitle.setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
-        btnExitToTitle.setFont(normalFont);
-        btnExitToTitle.setFocusPainted(false);
-        btnExitToTitle.addActionListener(listener);
-
-        //----> Setting the menu panel <----
-        menuBoxPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        menuBoxPanel.setBackground(Color.BLACK);
-        menuBoxPanel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
-        menuBoxPanel.setPreferredSize(new Dimension(WINDOW_WIDTH / 3, WINDOW_HEIGHT / 8 * 6));
-        menuBoxPanel.setLocation(WINDOW_WIDTH / 2 - WINDOW_WIDTH / 6, WINDOW_HEIGHT / 8);
+        //========== Menu Panel ==========
+        menuBoxPanel = new MenuPanel(listener);
         menuBoxPanel.setBounds(WINDOW_WIDTH / 2 - WINDOW_WIDTH / 6, WINDOW_HEIGHT / 8, WINDOW_WIDTH / 3, WINDOW_HEIGHT / 8 * 6);
 
+        
         //adding all the components to the panel
         add(miniMap);
         JLabel lblEmpty = new JLabel();
@@ -153,36 +194,27 @@ public class ExploringPanel extends JPanel implements ActionListener{
         add(menuBoxPanel);
         menuBoxPanel.setVisible(false);
 
-        GridLayout layout = new GridLayout(2,1);
-        layout.setVgap(50);
-        menuPanel.setPreferredSize(new Dimension(BTN_WIDTH * 2, BTN_HEIGHT * 2 + 50));
-        menuPanel.setBackground(Color.BLACK);
-        menuPanel.setLayout(layout);
-        menuPanel.add(btnResume);
-        menuPanel.add(btnExitToTitle);
-        JLabel lblDummy = new JLabel();
-        lblDummy.setPreferredSize(new Dimension(BTN_WIDTH * 2, BTN_HEIGHT));
-
-        //----> Game Paused label <----
-        JLabel lblPaused = new JLabel("Game Paused");
-        lblPaused.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        lblPaused.setAlignmentY(JLabel.CENTER_ALIGNMENT);
-        lblPaused.setPreferredSize(new Dimension(BTN_WIDTH * 2, BTN_HEIGHT));
-        lblPaused.setFont(normalFont);
-        lblPaused.setForeground(Color.WHITE);
-
-        menuBoxPanel.add(lblPaused);
-        menuBoxPanel.add(lblDummy);
-        menuBoxPanel.add(menuPanel);
 
         addButtons();
     }
 
     public boolean isFighting() { return fighting; }
+    public boolean inSkillsTab() { return inSkillTab; }
+    public boolean inShopTab() { return inShopTab; }
+    public boolean isGameOver() { return gameOver; }
+
+    //setting up the buttons for moving around
+    private void setupButtons(JButton btn) {
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(true);
+        btn.addActionListener(this);
+    }
 
     //opens the main menu
     public void openMenu() {
         if(fighting) return;
+        if(inSkillTab) return;
         if(player.t.isRunning()) {
             player.t.stop();
         }
@@ -195,14 +227,28 @@ public class ExploringPanel extends JPanel implements ActionListener{
     //closes the main menu
     public void closeMenu() {
         if(fighting) return;
+        if(inSkillTab) return;
         menuBoxPanel.setVisible(false);
         if(player.moving && !player.t.isRunning()) player.t.start();
         enableBackground();
         if(player.moving) removeButtons();
     }
 
-    public void disableBackground() {   menuOpen = true; this.setEnabled(false); removeButtons(); miniMap.darken();  }
-    public void enableBackground()  {   menuOpen = false; this.setEnabled(true); addButtons(); miniMap.brighten();   }
+    public void disableBackground() {   menuOpen = true;
+                                        this.setEnabled(false);
+                                        removeButtons();
+                                        miniMap.darken();
+                                        expBar.setVisible(false);
+                                        openSkillTab.setVisible(false);
+                                        openShopTab.setVisible(false);  }
+    
+    public void enableBackground()  {   menuOpen = false;
+                                        this.setEnabled(true);
+                                        addButtons();
+                                        miniMap.brighten();
+                                        expBar.setVisible(true);
+                                        openSkillTab.setVisible(true);
+                                        openShopTab.setVisible(true);   }
 
     //removes directional buttons from the screen
     private void removeButtons() {
@@ -331,17 +377,6 @@ public class ExploringPanel extends JPanel implements ActionListener{
         }
     }
 
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        graphic = g;
-        setBackground(map[currentRoomY][currentRoomX].getRoom().getRoomColor());
-        player.draw(g);
-        if(menuOpen) {
-            g.setColor(new Color(0, 0, 0, 0.5f));
-            g.fillRect(0, 0, super.getWidth(), super.getHeight());
-        }
-    }
-
     private void playerMoved() {
         player.t.stop();
         player.moving = false;
@@ -359,6 +394,91 @@ public class ExploringPanel extends JPanel implements ActionListener{
         if(!map[currentRoomY][currentRoomX].needToFight()) {
             fighting = false;
             enableBackground();
+        }
+    }
+
+    private void endBattle() {
+        int prevLevel = player.getLevel();
+        player.gainSpoils(map[currentRoomY][currentRoomX].getMonster());
+        shopPanel.updateGold();
+        if(player.getLevel() > prevLevel) leveledUp = true;
+        else leveledUp = false;
+
+        if(leveledUp) {
+            lvlUpPanel = new LevelUpPanel(player, this);
+            int width = getWidth() / 5;
+            int height = getHeight() / 4;
+            lvlUpPanel.setBounds(getWidth() / 2 - width / 2, getHeight() / 2 - height / 2, width, height);
+            this.add(lvlUpPanel);
+        }
+        else enableBackground();
+
+        updateEXPbar();
+        updateSkillsIcon();
+    }
+
+    private void updateEXPbar() {
+        expBar.setMaximum(player.getMaxEXP());
+        expBar.setValue(player.getCurrentEXP());
+    }
+
+    private void updateSkillsIcon() {
+        if(player.getSkillPoints() > 0) openSkillTab.setIcon(new ImageIcon(imgSkillsAvailable));
+        else openSkillTab.setIcon(new ImageIcon(imgSkills));
+    }
+
+    private void gotoSkills() {
+        inSkillTab = true;
+        disableBackground();
+        int skillTabWidth = getWidth() / 3 * 2;
+        int skillTabheight = getHeight() / 3 * 2;
+        skillsTab = new SkillsPanel(player, this);
+        skillsTab.setBounds(getWidth() / 2 - skillTabWidth / 2, getHeight() / 2 - skillTabheight / 2, skillTabWidth, skillTabheight);
+        this.add(skillsTab);
+    }
+
+    private void closeSkills() {
+        inSkillTab = false;
+        skillsTab.setVisible(false);
+        this.remove(skillsTab);
+        updateSkillsIcon();
+        enableBackground();
+    }
+
+    private void gotoShop() {
+        inShopTab = true;
+        disableBackground();
+        int shopTabWidth = getWidth() / 5 * 4;
+        int shopTabHeight = getHeight() / 5 * 4;
+        shopPanel.setBounds(getWidth() / 2 - shopTabWidth / 2, getHeight() / 2 - shopTabHeight / 2, shopTabWidth, shopTabHeight);
+        shopPanel.setVisible(true);
+    }
+
+    private void closeShop() {
+        inShopTab = false;
+        shopPanel.setVisible(false);
+        updateSkillsIcon();
+        enableBackground();
+    }
+
+    private void gameOver() {
+        gameOver = true;
+        disableBackground();
+        gameOverPanel = new GameOverPanel(listener);
+        int gameOverWidth = getWidth() / 3 * 2;
+        int gameOverHeight = getHeight() / 3 * 2;
+        gameOverPanel.setBounds(getWidth() / 2 - gameOverWidth / 2, getHeight() / 2 - gameOverHeight / 2, gameOverWidth, gameOverHeight);
+        this.add(gameOverPanel);
+    }
+
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        graphic = g;
+        setBackground(map[currentRoomY][currentRoomX].getRoom().getRoomColor());
+        player.draw();
+        if(menuOpen) {
+            g.setColor(new Color(0, 0, 0, 0.5f));
+            g.fillRect(0, 0, super.getWidth(), super.getHeight());
         }
     }
 
@@ -384,6 +504,19 @@ public class ExploringPanel extends JPanel implements ActionListener{
             player.go(Player.RIGHT, WINDOW_WIDTH ,WINDOW_HEIGHT, graphic);
         }
         
+        if(e.getSource().equals(openSkillTab)) {
+            gotoSkills();
+        }
+
+        if(e.getSource().equals(openShopTab)) {
+            gotoShop();
+        }
+
+        if(inShopTab) {
+            if(e.getSource().equals(shopPanel.btnClose))
+                closeShop();
+        }
+
         if(fighting) {
             if(e.getSource().equals(fightPanel.btnRun)) {
                 fighting = false;
@@ -392,9 +525,42 @@ public class ExploringPanel extends JPanel implements ActionListener{
             }
 
             if(e.getSource().equals(fightPanel.btnAttack)) {
-                fighting = false;
-                this.remove(fightPanel);
+                if(e.getActionCommand() == "Monster Defeated") {
+                    fighting = false;
+                    fightPanel.setVisible(false);
+                    this.remove(fightPanel);
+                    endBattle();
+                }
+
+                if(e.getActionCommand() == "Player Defeated") {
+                    fighting = false;
+                    fightPanel.setVisible(false);
+                    this.remove(fightPanel);
+                    gameOver();
+                }
+            }
+        }
+
+        if(leveledUp) {
+            if(e.getSource().equals(lvlUpPanel.btnContinue)) {
+                leveledUp = false;
+                this.remove(lvlUpPanel);
+                updateSkillsIcon();
                 enableBackground();
+            }
+
+            if(e.getSource().equals(lvlUpPanel.btnSkills)) {
+                leveledUp = false;
+                lvlUpPanel.setVisible(false);
+                this.remove(lvlUpPanel);
+                updateSkillsIcon();
+                gotoSkills();
+            }
+        }
+
+        if(inSkillTab) {
+            if(e.getSource().equals(skillsTab.btnClose)) {
+                closeSkills();
             }
         }
 
@@ -458,7 +624,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
                     playerMoved();
                 }
             }
-            player.draw(graphic);
+            player.draw();
             repaint();
         }
     }

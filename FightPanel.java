@@ -22,6 +22,7 @@ public class FightPanel extends JPanel implements ActionListener{
     JLabel lblMonsterDMG = new JLabel();
     JLabel lblPlayerAction = new JLabel();
     JLabel lblMonsterAction = new JLabel();
+    JLabel lblPlayerStatusEffect = new JLabel();
 
     JPanel playerPanel = new JPanel();
     JPanel monsterPanel = new JPanel();
@@ -72,8 +73,12 @@ public class FightPanel extends JPanel implements ActionListener{
         setupLabel(lblPlayerDMG);
         playerPanel.add(lblPlayerDMG);
 
-        //----> Empty Space <----
-        playerPanel.add(new JLabel());
+        //----> Player Status Effect Label <----
+        if(player.getStatusEffect() == Player.NONE) lblPlayerStatusEffect.setText("");
+        else lblPlayerStatusEffect.setText(player.getStatusEffect() + " -" + player.getStatusEffectDMG());
+        setupLabel(lblPlayerStatusEffect);
+        lblPlayerStatusEffect.setForeground(Color.RED);
+        playerPanel.add(lblPlayerStatusEffect);
 
         //----> Player Action Label <----
         lblPlayerAction.setText("");
@@ -110,31 +115,19 @@ public class FightPanel extends JPanel implements ActionListener{
 
         //----> Attack Button <----
         btnAttack.setText("Attack!");
-        btnAttack.setFont(normalFont);
-        btnAttack.setForeground(Color.WHITE);
-        btnAttack.setBackground(Color.DARK_GRAY);
-        btnAttack.setBorder(BorderFactory.createEtchedBorder());
-        btnAttack.setFocusPainted(false);
+        setupButton(btnAttack);
         btnAttack.addActionListener(this);
         buttonsPanel.add(btnAttack);
 
         //----> Use Potion Button <----
         btnUsePot.setText("Use Potion (" + player.getPotions() + ")");
-        btnUsePot.setFont(normalFont);
-        btnUsePot.setForeground(Color.WHITE);
-        btnUsePot.setBackground(Color.DARK_GRAY);
-        btnUsePot.setBorder(BorderFactory.createEtchedBorder());
-        btnUsePot.setFocusPainted(false);
+        setupButton(btnUsePot);
         btnUsePot.addActionListener(this);
         buttonsPanel.add(btnUsePot);
 
         //----> Run Button <----
         btnRun.setText("Run Away");
-        btnRun.setFont(normalFont);
-        btnRun.setForeground(Color.WHITE);
-        btnRun.setBackground(Color.DARK_GRAY);
-        btnRun.setBorder(BorderFactory.createEtchedBorder());
-        btnRun.setFocusPainted(false);
+        setupButton(btnRun);
         btnRun.addActionListener(this.listener);
         buttonsPanel.add(btnRun);
 
@@ -143,6 +136,14 @@ public class FightPanel extends JPanel implements ActionListener{
         this.add(playerPanel);
         this.add(buttonsPanel);
         this.add(monsterPanel);
+    }
+
+    private void setupButton(JButton btn) {
+        btn.setFont(normalFont);
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(Color.DARK_GRAY);
+        btn.setBorder(BorderFactory.createEtchedBorder());
+        btn.setFocusPainted(false);
     }
 
     private void setupLabel(JLabel label) {
@@ -158,17 +159,43 @@ public class FightPanel extends JPanel implements ActionListener{
         super.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED, Color.WHITE, Color.GRAY));
     }
 
+    private void updateStatusEffect() {
+        if(player.getStatusEffect() == Player.NONE) lblPlayerStatusEffect.setText("");
+        else lblPlayerStatusEffect.setText(player.getStatusEffect() + " -" + player.getStatusEffectDMG());
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if(e.getSource().equals(btnAttack)) {
             int dmgDealt = player.attack(monster);
             monsterHP.updateHealth(monster.getCurrentHP());
+            lblPlayerAction.setText("You dealt " + dmgDealt + " Damage!");
             if(monster.isDead())
-                listener.actionPerformed(new ActionEvent(btnAttack, ActionEvent.ACTION_PERFORMED, null) {
+                listener.actionPerformed(new ActionEvent(btnAttack, ActionEvent.ACTION_PERFORMED, "Monster Defeated") {
                     //Nothing need go here, the actionPerformed method (with the
                     //above arguments) will trigger the respective listener
-              });
+                });
+            if(!monster.isDead()) {
+                dmgDealt = monster.attack(player);
+                playerHP.updateHealth(player.getCurrentHP());
+                lblMonsterAction.setText("The " + monster.getName() + " dealt " + dmgDealt + "damage!");
+                if(player.isDead())
+                    listener.actionPerformed(new ActionEvent(btnAttack, ActionEvent.ACTION_PERFORMED, "Player Defeated") {
+                        //Nothing need go here, the actionPerformed method (with the
+                        //above arguments) will trigger the respective listener
+                    });
+                }
+            
+            updateStatusEffect();
         }
         
+        if(e.getSource().equals(btnUsePot)) {
+            if(player.usePotion()) {
+                playerHP.updateHealth(player.getCurrentHP());
+                btnUsePot.setText("Use Potion (" + player.getPotions() + ")");
+                updateStatusEffect();
+                repaint();
+            }
+        }
     }
 }

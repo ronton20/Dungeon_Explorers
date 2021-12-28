@@ -5,16 +5,19 @@ public abstract class Human extends Monster{
         super(level, 7);
     }
 
-    public void attack(Player player) {
-        int dmgDealt = (int)(this.DMG * player.getDamageReduction());
+    public int attack(Player player) {
+        int dmgDealt = this.DMG - (int)(this.DMG * player.getDamageReduction());
         player.takeDMG(dmgDealt);
 
         if((int)(Math.random() * 3) == 0)
             inflictPoison(player);
+
+        return dmgDealt;
     }
 
     private void inflictPoison(Player player) {
-        if(player.getStatusEffect() == Player.NONE)
-            player.setStatusEffect(Player.POISON, ((int)(Math.random() * (player.getLevel() - this.level)) * POISON_DMG));
+        int poisonDMG = ((int)(Math.random() * (player.getLevel() - this.level)) * POISON_DMG);
+        if(poisonDMG <= 0) poisonDMG = POISON_DMG;
+        player.setStatusEffect(Player.BLEED, poisonDMG);
     }
 }

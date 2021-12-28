@@ -6,16 +6,19 @@ public abstract class Monster {
     protected int DMG;
     protected int level;
     protected int gold;
+    protected int EXP;
 
-    public final int DEFAULT_MAX_HP = 80;
+    public final int DEFAULT_MAX_HP = 60;
     public final int DEFAULT_CURRENT_HP = DEFAULT_MAX_HP;
     public final int DEFAULT_DMG = 5;
     public final int DEFAULT_LEVEL = 1;
     public final int DEFAULT_GOLD = 5;
+    public final int DEFAULT_EXP = 40;
 
     private final int HP_PER_LEVEL = 10;
     private final int DMG_PER_LEVEL = 2;
     private final int GOLD_PER_LEVEL = 5;
+    private final double EXP_PER_LEVEL = 0.2;
 
     private boolean dead;
 
@@ -25,6 +28,7 @@ public abstract class Monster {
         DMG = DEFAULT_DMG;
         level = DEFAULT_LEVEL;
         gold = DEFAULT_GOLD;
+        EXP = DEFAULT_EXP;
         dead = false;
     }
 
@@ -34,6 +38,7 @@ public abstract class Monster {
         this.currentHP = this.maxHP;
         this.DMG = DEFAULT_DMG + (((int)(Math.random() * DMG_PER_LEVEL) + 1) * level);
         this.gold = DEFAULT_GOLD + (((int)(Math.random() * GOLD_PER_LEVEL) + 1) * this.level);
+        this.EXP = DEFAULT_EXP + (int)(DEFAULT_EXP * EXP_PER_LEVEL) * this.level;
     }
 
     public Monster(int level, int basicDmg) {
@@ -42,6 +47,7 @@ public abstract class Monster {
         this.currentHP = this.maxHP;
         this.DMG = basicDmg + (((int)(Math.random() * DMG_PER_LEVEL) + 1) * level);
         this.gold = DEFAULT_GOLD + (((int)(Math.random() * GOLD_PER_LEVEL) + 1) * this.level);
+        this.EXP = DEFAULT_EXP + (int)(DEFAULT_EXP * EXP_PER_LEVEL) * this.level;
     }
 
     public int getCurrentHP() { return currentHP; }
@@ -49,6 +55,7 @@ public abstract class Monster {
     public int getDMG() { return DMG; }
     public int getLevel() { return level; }
     public int getGold() { return gold; }
+    public int getEXP() { return EXP; }
     public boolean isDead() { return dead; }
     public abstract String getName();
 
@@ -66,5 +73,5 @@ public abstract class Monster {
             currentHP = maxHP;
     }
 
-    public abstract void attack(Player player);
+    public abstract int attack(Player player);
 }
