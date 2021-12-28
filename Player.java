@@ -5,6 +5,10 @@ import java.awt.event.*;
 
 public class Player {
 
+    public static final String NONE = "None";
+    public static final String BLEED = "Bleed";
+    public static final String POISON = "Poison";
+
     public static final int UP = 1;
     public static final int DOWN = 2;
     public static final int LEFT = 3;
@@ -22,6 +26,7 @@ public class Player {
     public final int DEFAULT_DMG = 15;
     public final int DEFAULT_LEVEL = 1;
     public final int DEFAULT_GOLD = 0;
+    public final double DEFAULT_DMG_REDUCTION = 0;
 
     private final int HP_PER_POINT = 15;
     private final int DMG_PER_POINT = 3;
@@ -36,9 +41,13 @@ public class Player {
     private int totalDMG;
     private int level;
     private int gold;
+    private double dmgReduction;
     private int skillPointsHP;
     private int skillPointsDMG;
     private int skillPoints;
+    private String statusEffect;
+    private int statusEffectDmg;
+    private int healthPots;
 
     private int panelWidth;
     private int panelHeight;
@@ -47,6 +56,7 @@ public class Player {
     public boolean moving;
     private boolean reachedDestination;
     private int direction;
+
     Timer t;
     Graphics graphic;
     ActionListener listener;
@@ -60,16 +70,20 @@ public class Player {
         this.totalDMG = DEFAULT_DMG;
         this.level = DEFAULT_LEVEL;
         this.gold = DEFAULT_GOLD;
+        this.dmgReduction = DEFAULT_DMG_REDUCTION;
         this.skillPointsHP = 0;
         this.skillPointsDMG = 0;
         this.skillPoints = 0;
+        this.healthPots = 0;
         this.listener = lis;
         this.moving = false;
+        this.statusEffect = Player.NONE;
+        this.statusEffectDmg = 0;
 
         this.x = x;
         this.y = y;
 
-        t = new Timer(25, listener);
+        t = new Timer(10, listener);
     }
 
     //----> getters <----
@@ -82,11 +96,42 @@ public class Player {
     public int getX() { return x; }
     public int getY() { return y; }
     public int getSkillPoints() { return skillPoints; }
+    public int getPotions() { return healthPots; }
+    public double getDamageReduction() { return dmgReduction; }
+    public String getStatusEffect() { return statusEffect; }
+    public void clearStatusEffect() { statusEffect = Player.NONE; }
+
+    public int attack(Monster monster) {
+        int dmgDealt = totalDMG;
+        monster.takeDMG(dmgDealt);
+        return dmgDealt;
+    }
 
     public void takeDMG(int DMG) {
         this.currentHP -= DMG;
+        if(statusEffect == Player.BLEED) this.currentHP -= statusEffectDmg;
+        if(statusEffect == Player.POISON) this.currentHP -= statusEffectDmg;
         if(this.currentHP <= 0)
             die();
+    }
+
+    public boolean usePotion() {
+        if(healthPots == 0) return false;
+        if(statusEffect != Player.NONE) {
+            statusEffect = Player.NONE;
+            statusEffectDmg = 0;
+            healthPots--;
+            return true;
+        }
+        if(currentHP == maxHP) return false;
+        healthPots--;
+        double healPercent = 0.25;
+        int missingHealth = maxHP - currentHP;
+        if(missingHealth <= 20)
+            heal(10);
+        else
+            heal((int)(missingHealth * healPercent));
+        return true;
     }
 
     public void heal(int health) {
@@ -120,12 +165,16 @@ public class Player {
         totalDMG = baseDMG;     //***** needs to adjust when items are added *****
     }
 
+    public void setStatusEffect(String type, int dmg) {
+        statusEffect = type;
+        statusEffectDmg = dmg;
+    }
+
     public void die() {
 
     }
 
     public void move(int direction) {
-        System.out.println("move");
         if(direction == Player.UP) this.y -= Player.STEP;
         else if(direction == Player.DOWN) this.y += Player.STEP;
         else if(direction == Player.LEFT) this.x -= Player.STEP;
@@ -162,7 +211,6 @@ public class Player {
         graphic = g;
         this.panelWidth = panelWidth;
         this.panelHeight = panelHeight;
-        System.out.println("go");
         reachedDestination = false;
         movedRoom = false;
         t.start();
@@ -189,7 +237,7 @@ public class Player {
     }
 
     public void draw(Graphics g) {
-        g.setColor(Color.RED);
+        g.setColor(Color.BLACK);
         g.fillRect(x, y, PLAYER_SIZE, PLAYER_SIZE);
     }
 }

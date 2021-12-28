@@ -2,7 +2,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
+import java.util.ArrayList;
+import java.util.Stack;
 
 public class ExploringPanel extends JPanel implements ActionListener{
     
@@ -11,6 +12,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
     JPanel menuPanel = new JPanel();
     JPanel menuBoxPanel = new JPanel();
+    FightPanel fightPanel;
 
     JButton btnResume = new JButton("Continue");
     JButton btnExitToTitle = new JButton("Exit to Title Screen");
@@ -33,19 +35,28 @@ public class ExploringPanel extends JPanel implements ActionListener{
     private final int BTN_HEIGHT = WINDOW_HEIGHT / 8;
 
     private boolean menuOpen;
-    private boolean canGoUp;
-    private boolean canGoDown;
-    private boolean canGoLeft;
-    private boolean canGoRight;
 
-    int[][] map;
-    private final int MAP_SIZE = 5; 
+    Cell[][] map;
+    int[][] mapIndicator;
+    private final int MAP_SIZE = 10; 
     private final int START_ROOM_X = MAP_SIZE / 2;
     private final int START_ROOM_Y = MAP_SIZE - 1;
     private int currentRoomX;
     private int currentRoomY;
+    private boolean goalRoomGenerated;
+    private boolean fighting;
+
+    private int from;
+
+    private Stack<Cell> stack;
+
+    MiniMap miniMap;
+    private final int MINIMAP_SIZE = 200;
 
     Player player = new Player(WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2, WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2, this);
+
+
+
 
     public ExploringPanel(int width, int height, ActionListener lis){
 
@@ -54,21 +65,32 @@ public class ExploringPanel extends JPanel implements ActionListener{
         listener = lis;
         bgColor = STARTING_COLOR;
         menuOpen = false;
+        fighting = false;
         currentRoomX = START_ROOM_X;
         currentRoomY = START_ROOM_Y;
-        canGoLeft = true;
-        canGoRight = true;
-        canGoUp = true;
-        canGoDown = false;
 
         generateMap();
+
+        map[currentRoomY][currentRoomX].playerEntered();
+
+        for(int i = 0; i < MAP_SIZE; i++) {
+            for (int j = 0; j < MAP_SIZE; j++) {
+                if(map[i][j] == null) System.out.print("null\t");
+                else if(map[i][j].getRoom() == null) System.out.print("0\t");
+                else System.out.print(map[i][j].getRoom().getType() + " , ");
+            }
+            System.out.println();
+        }
+
+        miniMap = new MiniMap(map);
+        miniMap.setBounds(10, 10, MINIMAP_SIZE, MINIMAP_SIZE);
 
         setLayout(null);
 
         //----> Setting the button for going up <----
         btnUp.setOpaque(false);
         btnUp.setContentAreaFilled(false);
-        btnUp.setBorderPainted(false);
+        btnUp.setBorderPainted(true);
         btnUp.addActionListener(this);
         btnUp.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, 0, BTN_WIDTH, BTN_HEIGHT);
         add(btnUp);
@@ -76,15 +98,15 @@ public class ExploringPanel extends JPanel implements ActionListener{
         //----> Setting the button for going down <----
         btnDown.setOpaque(false);
         btnDown.setContentAreaFilled(false);
-        btnDown.setBorderPainted(false);
+        btnDown.setBorderPainted(true);
         btnDown.addActionListener(this);
-        btnDown.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT - BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
+        btnDown.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT - BTN_HEIGHT * 2, BTN_WIDTH, BTN_HEIGHT);
         add(btnDown);
 
         //----> Setting the button for going left <----
         btnLeft.setOpaque(false);
         btnLeft.setContentAreaFilled(false);
-        btnLeft.setBorderPainted(false);
+        btnLeft.setBorderPainted(true);
         btnLeft.addActionListener(this);
         btnLeft.setBounds(0, WINDOW_HEIGHT / 2 - BTN_WIDTH / 2, BTN_HEIGHT, BTN_WIDTH);
         add(btnLeft);
@@ -92,7 +114,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
         //----> Setting the button for going right <----
         btnRight.setOpaque(false);
         btnRight.setContentAreaFilled(false);
-        btnRight.setBorderPainted(false);
+        btnRight.setBorderPainted(true);
         btnRight.addActionListener(this);
         btnRight.setBounds(WINDOW_WIDTH - BTN_HEIGHT, WINDOW_HEIGHT / 2 - BTN_WIDTH / 2, BTN_HEIGHT, BTN_WIDTH);
         add(btnRight);
@@ -123,7 +145,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
         menuBoxPanel.setLocation(WINDOW_WIDTH / 2 - WINDOW_WIDTH / 6, WINDOW_HEIGHT / 8);
         menuBoxPanel.setBounds(WINDOW_WIDTH / 2 - WINDOW_WIDTH / 6, WINDOW_HEIGHT / 8, WINDOW_WIDTH / 3, WINDOW_HEIGHT / 8 * 6);
 
-        //adding all the components to the frame
+        //adding all the components to the panel
+        add(miniMap);
         JLabel lblEmpty = new JLabel();
         lblEmpty.setPreferredSize(new Dimension(BTN_WIDTH * 2, BTN_WIDTH * 2));
         add(lblEmpty);
@@ -151,33 +174,37 @@ public class ExploringPanel extends JPanel implements ActionListener{
         menuBoxPanel.add(lblPaused);
         menuBoxPanel.add(lblDummy);
         menuBoxPanel.add(menuPanel);
+
+        addButtons();
     }
+
+    public boolean isFighting() { return fighting; }
 
     //opens the main menu
     public void openMenu() {
-        menuOpen = true;
-        // bgColor = getBackground().darker();
-        // this.setForeground(super.getForeground().darker());
-        this.setEnabled(false);
+        if(fighting) return;
         if(player.t.isRunning()) {
             player.t.stop();
         }
-        
+
+        disableBackground();
+
         menuBoxPanel.setVisible(true);
-        
     }
 
     //closes the main menu
     public void closeMenu() {
-        menuOpen = false;
-        this.setEnabled(true);
-        // bgColor = getBackground().brighter();
-        // this.setForeground(super.getForeground().brighter());
+        if(fighting) return;
         menuBoxPanel.setVisible(false);
         if(player.moving && !player.t.isRunning()) player.t.start();
-        
+        enableBackground();
+        if(player.moving) removeButtons();
     }
 
+    public void disableBackground() {   menuOpen = true; this.setEnabled(false); removeButtons(); miniMap.darken();  }
+    public void enableBackground()  {   menuOpen = false; this.setEnabled(true); addButtons(); miniMap.brighten();   }
+
+    //removes directional buttons from the screen
     private void removeButtons() {
         btnUp.setVisible(false);
         btnDown.setVisible(false);
@@ -185,30 +212,153 @@ public class ExploringPanel extends JPanel implements ActionListener{
         btnRight.setVisible(false);
     }
 
+    //adds directional buttons to the screen based on current room
     private void addButtons() {
-        btnUp.setVisible(canGoUp);
-        btnDown.setVisible(canGoDown);
-        btnLeft.setVisible(canGoLeft);
-        btnRight.setVisible(canGoRight);
+        btnUp.setVisible(map[currentRoomY][currentRoomX].canGoUp());
+        btnDown.setVisible(map[currentRoomY][currentRoomX].canGoDown());
+        btnLeft.setVisible(map[currentRoomY][currentRoomX].canGoLeft());
+        btnRight.setVisible(map[currentRoomY][currentRoomX].canGoRight());
     }
 
     private void generateMap() {
-        map = new int[MAP_SIZE][MAP_SIZE];
-        for(int i = 0; i < MAP_SIZE; i++) 
-            for (int j = 0; j < MAP_SIZE; j++) {
-                map[i][j] = 0;
+        map = new Cell[MAP_SIZE][MAP_SIZE];
+        mapIndicator = new int[MAP_SIZE][MAP_SIZE];
+        stack = new Stack<>();
+
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map.length; j++) {
+                map[i][j] = new Cell(j, i, MINIMAP_SIZE / MAP_SIZE);
             }
-        map[currentRoomY][currentRoomX] = 1;
+        }
+
+        map[START_ROOM_Y][START_ROOM_X].visited();
+        map[START_ROOM_Y][START_ROOM_X].setColor(Color.GREEN);
+
+        mapIndicator[START_ROOM_Y][START_ROOM_X] = 1;
+        goalRoomGenerated = false;
+        
+        createMap(map[START_ROOM_Y][START_ROOM_X]);
+
+        ArrayList<Room> deadEndList = new ArrayList<>();
+
+        //generating rooms
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map.length; j++) {
+                if(map[i][j] != null) {
+                    map[i][j].createRoom();
+                    if(map[i][j].getRoom().getType() == Room.DEAD_END)
+                        deadEndList.add(map[i][j].getRoom());
+                }
+            }
+        }
+        //Setting the starting room
+        map[START_ROOM_Y][START_ROOM_X].getRoom().setStartRoom();
+
+        //generating the Goal room
+        while(!goalRoomGenerated) {
+            int rand = (int)(Math.random() * deadEndList.size());
+            if(deadEndList.get(rand).getType() != Room.START_ROOM) {
+                deadEndList.get(rand).setGoal();
+                goalRoomGenerated = true;
+            }
+        }
+    }
+
+    private void createMap(Cell current) {
+
+        Cell next = getNeighbor(current);
+        if(next != null) {
+            next.visited();
+            next.setColor(Color.CYAN);
+            stack.add(current);
+            removeWalls(current, next);
+            createMap(next);
+        } else if(!stack.isEmpty()) {
+            createMap(stack.pop());
+        }
+    }
+
+    private Cell getNeighbor(Cell cell) {
+
+        int row = cell.getY();
+        int col = cell.getX();
+
+        ArrayList<Cell> neighbors = new ArrayList<>();
+
+        if(row > 0) {
+            Cell top = map[row - 1][col];
+            if(!top.isVisited()) neighbors.add(top);
+        }
+        if(col < MAP_SIZE - 1) {
+            Cell right = map[row][col + 1];
+            if(!right.isVisited()) neighbors.add(right);
+        }
+        if(row < MAP_SIZE - 1) {
+            Cell bottom = map[row + 1][col];
+            if(!bottom.isVisited()) neighbors.add(bottom);
+        }
+        if(col > 0) {
+            Cell left = map[row][col - 1];
+            if(!left.isVisited()) neighbors.add(left);
+        }
+
+        if(neighbors.size() > 0) {
+            return neighbors.get((int)(Math.random() * neighbors.size()));
+        }
+
+        return null;
+    }
+
+    private void removeWalls(Cell a, Cell b) {
+        int x = a.getX() - b.getX();
+
+        if(x == 1) {
+            a.removeWall(Cell.LEFT);
+            b.removeWall(Cell.RIGHT);
+        } else if(x == -1) {
+            a.removeWall(Cell.RIGHT);
+            b.removeWall(Cell.LEFT);
+        } else {
+            int y = a.getY() - b.getY();
+
+            if(y == 1) {
+                a.removeWall(Cell.TOP);
+                b.removeWall(Cell.BOTTOM);
+            } else if(y == -1) {
+                a.removeWall(Cell.BOTTOM);
+                b.removeWall(Cell.TOP);
+            } else return;
+        }
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         graphic = g;
-        setBackground(bgColor);
+        setBackground(map[currentRoomY][currentRoomX].getRoom().getRoomColor());
         player.draw(g);
         if(menuOpen) {
             g.setColor(new Color(0, 0, 0, 0.5f));
-            g.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+            g.fillRect(0, 0, super.getWidth(), super.getHeight());
+        }
+    }
+
+    private void playerMoved() {
+        player.t.stop();
+        player.moving = false;
+        fighting = true;
+        if(map[currentRoomY][currentRoomX].getMonster() == null)
+             map[currentRoomY][currentRoomX].generateMonster(player.getLevel());
+        if(map[currentRoomY][currentRoomX].needToFight()) {
+            fightPanel = new FightPanel(player, map[currentRoomY][currentRoomX].getMonster(), this);
+            fightPanel.setBounds(getWidth() / 2 - getWidth() / 4 * 3 / 2, getHeight() / 2 - getHeight() / 4 * 3 / 2, getWidth() / 4 * 3, getHeight() / 4 * 3);
+            fightPanel.setVisible(true);
+            disableBackground();
+            this.add(fightPanel);
+        }
+        // addButtons();
+        if(!map[currentRoomY][currentRoomX].needToFight()) {
+            fighting = false;
+            enableBackground();
         }
     }
 
@@ -234,17 +384,33 @@ public class ExploringPanel extends JPanel implements ActionListener{
             player.go(Player.RIGHT, WINDOW_WIDTH ,WINDOW_HEIGHT, graphic);
         }
         
+        if(fighting) {
+            if(e.getSource().equals(fightPanel.btnRun)) {
+                fighting = false;
+                this.remove(fightPanel);
+                player.go(this.from, WINDOW_WIDTH ,WINDOW_HEIGHT, graphic);
+            }
+
+            if(e.getSource().equals(fightPanel.btnAttack)) {
+                fighting = false;
+                this.remove(fightPanel);
+                enableBackground();
+            }
+        }
+
         if(e.getSource().equals(player.t)) {
             if(player.getDirection() == Player.UP) {
                 player.move(Player.UP);
                 if(!player.movedRoom && player.getY() <= 0) {
                     player.moveRoom(Player.UP);
                     player.movedRoom = true;
+                    map[currentRoomY][currentRoomX].playerLeft();
+                    currentRoomY--;
+                    map[currentRoomY][currentRoomX].playerEntered();
                 }
                 if(player.movedRoom && player.getY() <= WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2) {
-                    player.t.stop();
-                    player.moving = false;
-                    addButtons();
+                    this.from = Player.DOWN;
+                    playerMoved();
                 }
             }
                 
@@ -253,11 +419,13 @@ public class ExploringPanel extends JPanel implements ActionListener{
                 if(!player.movedRoom && player.getY() >= WINDOW_HEIGHT - Player.PLAYER_SIZE) {
                     player.moveRoom(Player.DOWN);
                     player.movedRoom = true;
+                    map[currentRoomY][currentRoomX].playerLeft();
+                    currentRoomY++;
+                    map[currentRoomY][currentRoomX].playerEntered();
                 }
                 if(player.movedRoom && player.getY() >= WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2) {
-                    player.t.stop();
-                    player.moving = false;
-                    addButtons();
+                    this.from = Player.UP;
+                    playerMoved();
                 }
             }
 
@@ -266,11 +434,13 @@ public class ExploringPanel extends JPanel implements ActionListener{
                 if(!player.movedRoom && player.getX() <= 0) {
                     player.moveRoom(Player.LEFT);
                     player.movedRoom = true;
+                    map[currentRoomY][currentRoomX].playerLeft();
+                    currentRoomX--;
+                    map[currentRoomY][currentRoomX].playerEntered();
                 }
                 if(player.movedRoom && player.getX() <= WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2) {
-                    player.t.stop();
-                    player.moving = false;
-                    addButtons();
+                    this.from = Player.RIGHT;
+                    playerMoved();
                 }
             }
 
@@ -279,11 +449,13 @@ public class ExploringPanel extends JPanel implements ActionListener{
                 if(!player.movedRoom && player.getX() >= WINDOW_WIDTH- Player.PLAYER_SIZE) {
                     player.moveRoom(Player.RIGHT);
                     player.movedRoom = true;
+                    map[currentRoomY][currentRoomX].playerLeft();
+                    currentRoomX++;
+                    map[currentRoomY][currentRoomX].playerEntered();
                 }
                 if(player.movedRoom && player.getX() >= WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2) {
-                    player.t.stop();
-                    player.moving = false;
-                    addButtons();
+                    this.from = Player.LEFT;
+                    playerMoved();
                 }
             }
             player.draw(graphic);

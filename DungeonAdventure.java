@@ -126,6 +126,7 @@ public class DungeonAdventure implements ActionListener {
         }
         //opening/closing the main menu
         if(e.getSource().equals(btnMenu)) {
+            if(gamePanel.isFighting()) return;
             if(!menuOpen) {
                 gamePanel.openMenu();
                 btnMenu.setText("Close");
