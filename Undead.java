@@ -7,8 +7,7 @@ public abstract class Undead extends Monster{
     }
 
     public int attack(Player player) {
-        int dmgDealt = this.DMG - (int)(this.DMG * player.getDamageReduction());
-        player.takeDMG(dmgDealt);
+        int dmgDealt = player.takeDMG(this.DMG);
         if((int)(Math.random() * 5) == 0)
             lifeSteal(dmgDealt);
 

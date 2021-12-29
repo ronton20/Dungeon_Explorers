@@ -413,6 +413,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
             int height = getHeight() / 4;
             lvlUpPanel.setBounds(getWidth() / 2 - width / 2, getHeight() / 2 - height / 2, width, height);
             this.add(lvlUpPanel);
+            shopPanel.restock();
+            shopPanel.upgrade();
         }
         else enableBackground();
 
@@ -474,6 +476,17 @@ public class ExploringPanel extends JPanel implements ActionListener{
         this.add(gameOverPanel);
     }
 
+    private void revealGoalRoom() {
+        for(int i = 0; i < MAP_SIZE; i++) {
+            for(int j = 0; j < MAP_SIZE; j++) {
+                if(map[i][j].getRoom().getType() == Room.GOAL_ROOM) {
+                    map[i][j].reveal();
+                    miniMap.repaint();
+                }
+            }
+        }
+    }
+
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         graphic = g;
@@ -518,6 +531,14 @@ public class ExploringPanel extends JPanel implements ActionListener{
         if(inShopTab) {
             if(e.getSource().equals(shopPanel.btnClose))
                 closeShop();
+            if(e.getSource().equals(shopPanel.btnBuy)) {
+
+                if(e.getActionCommand() == "Update Skills")
+                    updateSkillsIcon();
+
+                if(e.getActionCommand() == "Goal Map Bought")
+                    revealGoalRoom();
+            }
         }
 
         if(fighting) {

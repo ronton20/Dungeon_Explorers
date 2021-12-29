@@ -170,6 +170,7 @@ public class FightPanel extends JPanel implements ActionListener{
             int dmgDealt = player.attack(monster);
             monsterHP.updateHealth(monster.getCurrentHP());
             lblPlayerAction.setText("You dealt " + dmgDealt + " Damage!");
+            if(player.didCrit()) lblPlayerAction.setText("Your attack Crits for " + dmgDealt + " Damage!");
             if(monster.isDead())
                 listener.actionPerformed(new ActionEvent(btnAttack, ActionEvent.ACTION_PERFORMED, "Monster Defeated") {
                     //Nothing need go here, the actionPerformed method (with the

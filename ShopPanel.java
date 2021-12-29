@@ -19,17 +19,22 @@ public class ShopPanel extends JPanel implements ActionListener{
     ItemPanel refillPot;
     ItemPanel healthPot;
     ItemPanel level;
+    ItemPanel skillPoint;
+    ItemPanel goalMap;
+    ItemPanel weapon;
+    ItemPanel shield;
+    ItemPanel helmet;
+    ItemPanel armour;
+    ItemPanel gloves;
 
     JPanel titlePanel = new JPanel();
     JPanel backPanel = new JPanel();
     JPanel bodyPanel = new JPanel();
 
-    HPskillPanel hpPanel;
-    DMGskillPanel dmgPanel;
-
     JLabel lblShop = new JLabel();
     JLabel lblYourGold = new JLabel();
     JButton btnClose = new JButton();
+    JButton btnBuy = new JButton();
 
     Color backgroundColor = new Color(30, 30, 30);
 
@@ -73,9 +78,6 @@ public class ShopPanel extends JPanel implements ActionListener{
 
         this.add(btnClose);
 
-        hpPanel = new HPskillPanel(player, this);
-        dmgPanel = new DMGskillPanel(player, this);
-
         GridLayout bodyLayout = new GridLayout(2, 5);
         bodyLayout.setVgap(50);
         bodyLayout.setHgap(20);
@@ -86,17 +88,24 @@ public class ShopPanel extends JPanel implements ActionListener{
         refillPot = new ItemPanel(this.player, this, ItemPanel.POTION_REFILLABLE);
         healthPot = new ItemPanel(this.player, this, ItemPanel.POTION);
         level = new ItemPanel(this.player, this, ItemPanel.LEVEL);
+        skillPoint = new ItemPanel(this.player, this, ItemPanel.SKILL_POINT);
+        goalMap = new ItemPanel(this.player, this, ItemPanel.GOAL_ROOM_MAP);
+        weapon = new ItemPanel(this.player, this, ItemPanel.WEAPON);
+        shield = new ItemPanel(this.player, this, ItemPanel.SHIELD);
+        helmet = new ItemPanel(this.player, this, ItemPanel.HELMET);
+        armour = new ItemPanel(this.player, this, ItemPanel.ARMOUR);
+        gloves = new ItemPanel(this.player, this, ItemPanel.GLOVES);
 
         bodyPanel.add(refillPot);
         bodyPanel.add(healthPot);
         bodyPanel.add(level);
-        bodyPanel.add(new JPanel());
-        bodyPanel.add(new JPanel());
-        bodyPanel.add(new JPanel());
-        bodyPanel.add(new JPanel());
-        bodyPanel.add(new JPanel());
-        bodyPanel.add(new JPanel());
-        bodyPanel.add(new JPanel());
+        bodyPanel.add(skillPoint);
+        bodyPanel.add(goalMap);
+        bodyPanel.add(weapon);
+        bodyPanel.add(shield);
+        bodyPanel.add(helmet);
+        bodyPanel.add(armour);
+        bodyPanel.add(gloves);
 
         this.add(bodyPanel);
     }
@@ -104,13 +113,32 @@ public class ShopPanel extends JPanel implements ActionListener{
     public void updateGold() {
         lblYourGold.setText("Your Gold: " + player.getGold());
         refillPot.updateStats();
-        
-        //need all the items in the shop to be here        
+        healthPot.updateStats();
+        level.updateStats();
+        skillPoint.updateStats();
+        goalMap.updateStats();
+        weapon.updateStats();
+        shield.updateStats();
+        helmet.updateStats();
+        armour.updateStats();
+        gloves.updateStats();
+          
     }
 
-    public void updateGold(ItemPanel item) {
-        lblYourGold.setText("Your Gold: " + player.getGold());
-        item.updateStats();         
+    public void restock() {
+        refillPot.restock();
+        updateGold();
+    }
+
+    public void upgrade() {
+        refillPot.upgrade();
+        weapon.upgrade();
+        shield.upgrade();
+        helmet.upgrade();
+        armour.upgrade();
+        gloves.upgrade();
+
+        updateGold();
     }
 
     public void paintComponent(Graphics g) {
@@ -125,24 +153,110 @@ public class ShopPanel extends JPanel implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource().equals(hpPanel.btnLevelUp)) {
-            player.levelHP();
-            hpPanel.updateCurrentHP();
-            lblYourGold.setText("Your Gold: " + player.getGold());
-        }
         
-        if(e.getSource().equals(dmgPanel.btnLevelUp)) {
-            player.levelDMG();
-            dmgPanel.updateCurrentDMG();
-            lblYourGold.setText("Your Gold: " + player.getGold());
+        //Checking if the player bought a refillable potion
+        if(e.getSource().equals(refillPot.btnBuy)) {
+            if(!refillPot.isSoldOut()) {
+                if(player.buyPotion(refillPot.getPrice())) {
+                    refillPot.bought();
+                    updateGold();
+                }
+            }
         }
 
-        if(e.getSource().equals(refillPot.btnBuy)) {
-            if(player.buyPotion(refillPot.getPrice())) {
-                refillPot.bought();
-                updateGold(refillPot);
+        //Checking if the player bought a health potion
+        if(e.getSource().equals(healthPot.btnBuy)) {
+            if(!healthPot.isSoldOut()) {
+                if(player.buyPotion(healthPot.getPrice())) {
+                    healthPot.bought();
+                    updateGold();
+                }
             }
-            
+        }
+
+        //Checking if the player bought a level
+        if(e.getSource().equals(level.btnBuy)) {
+            if(!level.isSoldOut()) {
+                if(player.buyLevel(level.getPrice())) {
+                    level.bought();
+                    refillPot.restock();
+                    upgrade();
+                    updateGold();
+                    listener.actionPerformed(new ActionEvent(btnBuy, ActionEvent.ACTION_PERFORMED, "Update Skills"));
+                }
+            }
+        }
+
+        //Checking if the player bought a skillpoint
+        if(e.getSource().equals(skillPoint.btnBuy)) {
+            if(!skillPoint.isSoldOut()) {
+                if(player.buySkillpoint(skillPoint.getPrice())) {
+                    skillPoint.bought();
+                    updateGold();
+                    listener.actionPerformed(new ActionEvent(btnBuy, ActionEvent.ACTION_PERFORMED, "Update Skills"));
+                }
+            }
+        }
+
+        //Checking if the player bought the Goal Map
+        if(e.getSource().equals(goalMap.btnBuy)) {
+            if(!goalMap.isSoldOut()) {
+                if(player.buyGoalMap(goalMap.getPrice())) {
+                    goalMap.bought();
+                    updateGold();
+                    listener.actionPerformed(new ActionEvent(btnBuy, ActionEvent.ACTION_PERFORMED, "Goal Map Bought"));
+                }
+            }
+        }
+
+        //Checking if the player upgraded the weapon
+        if(e.getSource().equals(weapon.btnBuy)) {
+            if(!weapon.isSoldOut()) {
+                if(player.buyWeapon(weapon.getPrice(), ItemPanel.WEAPON_ATT_PER_RARITY)) {
+                    weapon.bought();
+                    updateGold();
+                }
+            }
+        }
+
+        //Checking if the player upgraded the shield
+        if(e.getSource().equals(shield.btnBuy)) {
+            if(!shield.isSoldOut()) {
+                if(player.buyShield(shield.getPrice(), ItemPanel.SHIELD_DEF_PER_RARITY)) {
+                    shield.bought();
+                    updateGold();
+                }
+            }
+        }
+
+        //Checking if the player upgraded the helmet
+        if(e.getSource().equals(helmet.btnBuy)) {
+            if(!helmet.isSoldOut()) {
+                if(player.buyHelmet(helmet.getPrice(), ItemPanel.HELMET_ATT_PER_RARITY, ItemPanel.HELMET_DEF_PER_RARITY)) {
+                    helmet.bought();
+                    updateGold();
+                }
+            }
+        }
+
+        //Checking if the player upgraded the armour
+        if(e.getSource().equals(armour.btnBuy)) {
+            if(!armour.isSoldOut()) {
+                if(player.buyArmour(armour.getPrice(), ItemPanel.ARMOUR_ATT_PER_RARITY, ItemPanel.ARMOUR_DEF_PER_RARITY)) {
+                    armour.bought();
+                    updateGold();
+                }
+            }
+        }
+
+        //Checking if the player upgraded the gloves
+        if(e.getSource().equals(gloves.btnBuy)) {
+            if(!gloves.isSoldOut()) {
+                if(player.buyGloves(gloves.getPrice(), ItemPanel.GLOVES_CRIT_RATE_PER_RARITY, ItemPanel.GLOVES_DEF_PER_RARITY)) {
+                    gloves.bought();
+                    updateGold();
+                }
+            }
         }
     }
 }

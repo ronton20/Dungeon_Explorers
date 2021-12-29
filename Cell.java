@@ -148,6 +148,8 @@ public class Cell implements Comparable<Cell>{
         }
     }
 
+    public void reveal() { this.hidden = false; }
+
     public void draw(Graphics g) {
         int x = this.x * cellSize;
         int y = this.y * cellSize;
@@ -180,7 +182,12 @@ public class Cell implements Comparable<Cell>{
 
     @Override
     public int compareTo(Cell o) {
-        // TODO Auto-generated method stub
+        int dY = this.y - o.y;
+        int dX = this.x - o.x;
+
+        if(dY != 0) return dY;
+        if(dX != 0) return dX;
         return 0;
     }
+
 }

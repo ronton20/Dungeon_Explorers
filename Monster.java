@@ -15,8 +15,8 @@ public abstract class Monster {
     public final int DEFAULT_GOLD = 5;
     public final int DEFAULT_EXP = 40;
 
-    private final int HP_PER_LEVEL = 10;
-    private final int DMG_PER_LEVEL = 2;
+    private final int HP_PER_LEVEL = 15;
+    private final int DMG_PER_LEVEL = 3;
     private final int GOLD_PER_LEVEL = 5;
     private final double EXP_PER_LEVEL = 0.2;
 

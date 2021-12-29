@@ -32,7 +32,6 @@ public class Player {
     public final int DEFAULT_DMG = 15;
     public final int DEFAULT_LEVEL = 1;
     public final int DEFAULT_GOLD = 0;
-    public final double DEFAULT_DMG_REDUCTION = 0;
 
     public static final int HP_PER_POINT = 5;
     public static final int DMG_PER_POINT = 2;
@@ -49,7 +48,6 @@ public class Player {
     private int totalDMG;
     private int level;
     private int gold;
-    private double dmgReduction;
     private int skillPointsHP;
     private int skillPointsDMG;
     private int skillPoints;
@@ -57,6 +55,19 @@ public class Player {
     private int statusEffectDmg;
     private int healthPots;
 
+    private int weaponLevel;
+    private int shieldLevel;
+    private int helmetLevel;
+    private int armourLevel;
+    private int glovesLevel;
+
+    private double totalAttackBonus;
+    private double totalDefenceBonus;
+    private double critRate;
+
+    private final double CRIT_DMG = 1.5;
+
+    private boolean isCrit;
     private boolean dead;
 
     private int panelWidth;
@@ -64,6 +75,7 @@ public class Player {
 
     public boolean movedRoom;
     public boolean moving;
+    private boolean hasGoalMap;
     private boolean reachedGoal;
     private int direction;
 
@@ -81,8 +93,7 @@ public class Player {
         this.baseDMG = DEFAULT_DMG;
         this.totalDMG = DEFAULT_DMG;
         this.level = DEFAULT_LEVEL;
-        this.gold = DEFAULT_GOLD;
-        this.dmgReduction = DEFAULT_DMG_REDUCTION;
+        this.gold = DEFAULT_GOLD + 10000;
         this.skillPointsHP = 0;
         this.skillPointsDMG = 0;
         this.skillPoints = 0;
@@ -92,6 +103,18 @@ public class Player {
         this.statusEffect = Player.NONE;
         this.statusEffectDmg = 0;
         this.reachedGoal = false;
+        this.hasGoalMap = false;
+        this.isCrit = false;
+
+        weaponLevel = 0;
+        shieldLevel = 0;
+        helmetLevel = 0;
+        armourLevel = 0;
+        glovesLevel = 0;
+
+        totalAttackBonus = 0;
+        totalDefenceBonus = 0;
+        critRate = 0;
 
         dead = false;
 
@@ -118,6 +141,9 @@ public class Player {
     public int getCurrentEXP()          { return currentEXP; }
     public int getMaxEXP()              { return maxEXP; }
     public int getDMG()                 { return totalDMG; }
+    public double getAttackBonus()      { return totalAttackBonus; }
+    public double getDefence()          { return totalDefenceBonus; }
+    public double getCritRate()         { return critRate; }
     public int getBaseDMG()             { return baseDMG; }
     public int getLevel()               { return level; }
     public int getGold()                { return gold; }
@@ -126,25 +152,33 @@ public class Player {
     public int getY()                   { return y; }
     public int getSkillPoints()         { return skillPoints; }
     public int getPotions()             { return healthPots; }
-    public double getDamageReduction()  { return dmgReduction; }
     public String getStatusEffect()     { return statusEffect; }
     public int getStatusEffectDMG()     { return statusEffectDmg; }
     public void clearStatusEffect()     { statusEffect = Player.NONE; }
     public boolean isDead()             { return dead; }
     public void goalReached()           { reachedGoal = true; }
+    public boolean didCrit()            { return isCrit; }
+    public void addSkillPoint()         { this.skillPoints++; }
+    public void getGoalMap()            { this.hasGoalMap = true; }
+    public boolean hesGoalMap()         { return this.hasGoalMap; }
 
     public int attack(Monster monster) {
+        this.isCrit = false;
+        if((int)(Math.random() * 101) < (int)(critRate * 100)) this.isCrit = true;
         int dmgDealt = totalDMG;
+        if(isCrit) dmgDealt = (int)(totalDMG * CRIT_DMG);
         monster.takeDMG(dmgDealt);
         return dmgDealt;
     }
 
-    public void takeDMG(int DMG) {
-        this.currentHP -= DMG;
+    public int takeDMG(int DMG) {
+        int dmgToTake = DMG - (int)(DMG * totalDefenceBonus);
+        this.currentHP -= dmgToTake;
         if(statusEffect == Player.BLEED) this.currentHP -= statusEffectDmg;
         if(statusEffect == Player.POISON) this.currentHP -= statusEffectDmg;
         if(this.currentHP <= 0)
             die();
+        return dmgToTake;
     }
 
     public boolean buyPotion(int price) {
@@ -152,6 +186,98 @@ public class Player {
         gold -= price;
         healthPots++;
         return true;
+    }
+
+    public boolean buyLevel(int price) {
+        if(gold < price) return false;
+        gold -= price;
+        levelUp();
+        return true;
+    }
+
+    public boolean buySkillpoint(int price) {
+        if(gold < price) return false;
+        gold -= price;
+        skillPoints++;
+        return true;
+    }
+
+    public boolean buyGoalMap(int price) {
+        if(gold < price) return false;
+        gold -= price;
+        getGoalMap();
+        return true;
+    }
+
+    public boolean buyWeapon(int price, double attIncrease) {
+        if(gold < price) return false;
+        gold -= price;
+        this.totalAttackBonus += attIncrease;
+        return true;
+    }
+
+    public boolean buyShield(int price, double defIncrease) {
+        if(gold < price) return false;
+        gold -= price;
+        this.totalDefenceBonus += defIncrease;
+        return true;
+    }
+
+    public boolean buyHelmet(int price, double attIncrease, double defIncrease) {
+        if(gold < price) return false;
+        gold -= price;
+        this.totalAttackBonus += attIncrease;
+        this.totalDefenceBonus += defIncrease;
+        return true;
+    }
+
+    public boolean buyArmour(int price, double attIncrease, double defIncrease) {
+        if(gold < price) return false;
+        gold -= price;
+        this.totalAttackBonus += attIncrease;
+        this.totalDefenceBonus += defIncrease;
+        return true;
+    }
+
+    public boolean buyGloves(int price, double critIncrease, double defIncrease) {
+        if(gold < price) return false;
+        gold -= price;
+        this.critRate += critIncrease;
+        this.totalDefenceBonus += defIncrease;
+        return true;
+    }
+
+    public void upgradeWeapon(double dmg) {
+        this.weaponLevel++;
+        this.totalAttackBonus += dmg;
+        updateStats();
+    }
+
+    public void upgradeShield(double armor) {
+        this.shieldLevel++;
+        this.totalDefenceBonus += armor;
+        updateStats();
+    }
+
+    public void upgradeHelmet(double dmg, double armor) {
+        this.helmetLevel++;
+        this.totalAttackBonus += dmg;
+        this.totalDefenceBonus += armor;
+        updateStats();
+    }
+
+    public void upgradeArmour(double dmg, double armor) {
+        this.armourLevel++;
+        this.totalAttackBonus += dmg;
+        this.totalDefenceBonus += armor;
+        updateStats();
+    }
+
+    public void upgradeGloves(double critRate, double armor) {
+        this.glovesLevel++;
+        this.totalDefenceBonus += armor;
+        this.critRate += critRate;
+        updateStats();
     }
 
     public boolean usePotion() {
@@ -206,12 +332,12 @@ public class Player {
     }
 
     public void updateStats() {
-        double hpPercent = (maxHP - currentHP) / maxHP;
+        double hpPercent = ((double)currentHP / maxHP);
         maxHP = DEFAULT_MAX_HP + (HP_PER_POINT * skillPointsHP) + (HP_PER_LEVEL * level);
-        currentHP = currentHP + (int)(maxHP * hpPercent);
+        currentHP = (int)((maxHP * hpPercent));
 
         baseDMG = DEFAULT_DMG + (DMG_PER_POINT * skillPointsDMG) + (DMG_PER_LEVEL * level);
-        totalDMG = baseDMG;     //***** needs to adjust when items are added *****
+        totalDMG = baseDMG + (int)((double)baseDMG * totalAttackBonus);
     }
 
     public void levelHP() {
