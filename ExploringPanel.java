@@ -4,6 +4,7 @@ import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.PriorityQueue;
 import java.util.Stack;
 import java.awt.image.*;
 import java.io.File;
@@ -68,7 +69,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
     private int from;
 
-    private Stack<Cell> stack;
+    // private Stack<Cell> stack;       //if we want a DFS generated map
+    private PriorityQueue<Cell> queue;  //if we want a BFS generated map
 
     MiniMap miniMap;
     private final int MINIMAP_SIZE = 200;
@@ -269,7 +271,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
     private void generateMap() {
         map = new Cell[MAP_SIZE][MAP_SIZE];
         mapIndicator = new int[MAP_SIZE][MAP_SIZE];
-        stack = new Stack<>();
+        // stack = new Stack<>();       //if we wnat the maze to be generated in a DFS fashion
+        queue = new PriorityQueue<>();  //if we wnat the maze to be generated in a BFS fashion
 
         for (int i = 0; i < map.length; i++) {
             for (int j = 0; j < map.length; j++) {
@@ -316,11 +319,11 @@ public class ExploringPanel extends JPanel implements ActionListener{
         if(next != null) {
             next.visited();
             next.setColor(Color.CYAN);
-            stack.add(current);
+            queue.add(current);
             removeWalls(current, next);
             createMap(next);
-        } else if(!stack.isEmpty()) {
-            createMap(stack.pop());
+        } else if(!queue.isEmpty()) {
+            createMap(queue.poll());
         }
     }
 

@@ -23,6 +23,9 @@ public class ItemPanel extends JPanel{
     Font middleFont = new Font("Times New Roman", Font.PLAIN, 20);
     Font textFont = new Font("Times New Roman", Font.PLAIN, 15);
 
+    JPanel descriptionPanel = new JPanel();
+    JPanel quantityPanel = new JPanel();
+
     JLabel lblItem = new JLabel();
     JLabel lblCurrentGold = new JLabel();
     JLabel lblCost = new JLabel();
@@ -34,7 +37,10 @@ public class ItemPanel extends JPanel{
     private int currentSupply;
     private int maxSupply;
 
+    private boolean soldOut;
+
     private final int POTION_PRICE = 50;
+    private final int LEVEL_PRICE = 1000;
 
     JButton btnBuy = new JButton();
 
@@ -42,12 +48,32 @@ public class ItemPanel extends JPanel{
     private ActionListener listener;
 
     private String item;
+    private int rarity;
+    private double statAtt;
+    private double statDef;
+    private double statCritRate;
+
+    private final double WEAPON_ATT_PER_RARITY = 0.05;
+    private final double SHIELD_DEF_PER_RARITY = 0.05;
+    private final double HELMET_DEF_PER_RARITY = 0.01;
+    private final double HELMET_ATT_PER_RARITY = 0.005;
+    private final double ARMOUR_DEF_PER_RARITY = 0.02;
+    private final double ARMOUR_ATT_PER_RARITY = 0.005;
+    private final double GLOVES_DEF_PER_RARITY = 0.005;
+    private final double GLOVES_CRIT_RATE_PER_RARITY = 0.30;
+
+    private final int COST_PER_RARITY = 250;
 
     public ItemPanel(Player player, ActionListener lis, String item) {
 
         this.player = player;
         this.listener = lis;
         this.item = item;
+        this.rarity = 0;
+        this.statAtt = 0;
+        this.statDef = 0;
+        this.statCritRate = 0;
+        this.soldOut = false;
 
         switch (item) {
             case POTION_REFILLABLE: 
@@ -100,6 +126,128 @@ public class ItemPanel extends JPanel{
     public int getPrice() { return cost; }
     public void bought() { currentSupply--; }
 
+    public void restock() {
+        if(this.item == POTION_REFILLABLE) {
+            currentSupply = maxSupply;
+            this.soldOut = true;
+        }
+    }
+
+    public void upgrade() {
+        if(player.getLevel() < 5) return;
+
+        if(player.getLevel() == 5) {
+            switch (this.item) {
+                case POTION_REFILLABLE:
+                    this.maxSupply++;
+                    this.currentSupply = this.maxSupply;
+                    updateStats();
+                    return;
+
+                case WEAPON:
+                    revealStats();
+                    return;
+
+                case SHIELD:
+                    revealStats();
+                    return;
+
+                case HELMET:
+                    revealStats();
+                    return;
+
+                case ARMOUR:
+                    revealStats();
+                    return;
+
+                case GLOVES:
+                    revealStats();
+                    return;
+            
+                default:
+                    return;
+            }
+        }
+        
+        if(player.getLevel() == 10) {
+            switch (this.item) {
+                case POTION_REFILLABLE:
+                    this.maxSupply++;
+                    this.currentSupply = this.maxSupply;
+                    updateStats();
+                    return;
+            
+                default:
+                    upgradeItem();
+                    return;
+            }
+        }
+
+        if(player.getLevel() == 15) {
+            switch (this.item) {
+                case POTION_REFILLABLE:
+                    this.maxSupply++;
+                    this.currentSupply = this.maxSupply;
+                    updateStats();
+                    return;
+            
+                default:
+                    upgradeItem();
+                    return;
+            }
+        }
+    }
+
+    private void upgradeItem() {
+        switch (this.item) {
+            case WEAPON:
+                this.rarity++;
+                this.statAtt = WEAPON_ATT_PER_RARITY * this.rarity;
+                break;
+
+            case SHIELD:
+                this.rarity++;
+                this.statDef = SHIELD_DEF_PER_RARITY * this.rarity;
+                break;
+
+            case HELMET:
+                this.rarity++;
+                this.statDef = HELMET_DEF_PER_RARITY * this.rarity;
+                this.statAtt = HELMET_ATT_PER_RARITY * this.rarity;
+                break;
+
+            case ARMOUR:
+                this.rarity++;
+                this.statDef = ARMOUR_DEF_PER_RARITY * this.rarity;
+                this.statAtt = ARMOUR_ATT_PER_RARITY * this.rarity;
+                break;
+
+            case GLOVES:
+                this.rarity++;
+                this.statCritRate = GLOVES_CRIT_RATE_PER_RARITY * this.rarity;
+                this.statDef = GLOVES_DEF_PER_RARITY * this.rarity;
+                break;
+        
+            default:
+                return;
+        }
+
+        updateStats();
+        if(currentSupply > 0) btnBuy.setText("Upgrade");
+    }
+
+    private void revealStats() {
+        upgradeItem();
+        this.maxSupply = 1;
+        this.currentSupply = this.maxSupply;
+        descriptionPanel.setVisible(true);
+        quantityPanel.setVisible(true);
+        btnBuy.setVisible(true);
+                    
+        updateStats();
+        if(currentSupply > 0) btnBuy.setText("Upgrade");
+    }
+
     public void updateStats() {
         updateGold();
         updateSupply();
@@ -114,8 +262,18 @@ public class ItemPanel extends JPanel{
 
     private void updateSupply() {
         lblCurrentSupply.setText("" + this.currentSupply);
-        if(this.currentSupply <= 0) lblCurrentSupply.setForeground(Color.RED);
-        else lblCurrentSupply.setForeground(Color.WHITE);
+        if(this.currentSupply <= 0) {
+            lblCurrentSupply.setForeground(Color.RED);
+            btnBuy.setText("Sold Out");
+            btnBuy.setForeground(Color.RED);
+            this.soldOut = true;
+        }
+        else {
+            lblCurrentSupply.setForeground(Color.WHITE);
+            btnBuy.setText("Purchase");
+            btnBuy.setForeground(Color.WHITE);
+            this.soldOut = false;
+        }
     }
 
     private void createRefillablePotion() {
@@ -130,48 +288,50 @@ public class ItemPanel extends JPanel{
         this.setLayout(mainLayout);
 
         //========== Item Label ==========
-        lblItem.setText("Refillable Potion");
+        lblItem.setText(this.item);
         setupLabel(lblItem);
         lblItem.setFont(middleFont);
         lblItem.setBackground(Color.DARK_GRAY);
         lblItem.setOpaque(true);
         this.add(lblItem);
 
-        //========== Cost Panel ==========
+        //========== Description Panel ==========
 
         GridLayout subLayout = new GridLayout(2, 1);
-        JPanel costPanel = new JPanel();
-        costPanel.setBackground(Color.BLACK);
-        costPanel.setLayout(subLayout);
+        descriptionPanel.setBackground(Color.BLACK);
+        descriptionPanel.setLayout(subLayout);
 
-        JLabel lblPrice = new JLabel("Price:");
-        setupLabel(lblPrice);
-        costPanel.add(lblPrice);
+        JLabel lblLine1 = new JLabel("Restore 50% of");
+        setupLabel(lblLine1);
+        descriptionPanel.add(lblLine1);
 
-        JPanel displayGold = new JPanel();
-        displayGold.setLayout(new GridLayout(1, 2));
-        displayGold.setBackground(Color.BLACK);
+        JLabel lblLine2 = new JLabel("Missing Health");
+        setupLabel(lblLine2);
+        descriptionPanel.add(lblLine2);
 
-        //----> Current Gold Label <----
-        lblCurrentGold.setText("" + currentGold);
-        setupLabel(lblCurrentGold);
-        if(currentGold < cost) lblCurrentGold.setForeground(Color.RED);
-        lblCurrentGold.setHorizontalAlignment(JLabel.RIGHT);
-        displayGold.add(lblCurrentGold);
+        // JPanel displayGold = new JPanel();
+        // displayGold.setLayout(new GridLayout(1, 2));
+        // displayGold.setBackground(Color.BLACK);
 
-        //----> Price Label <----
-        lblCost.setText("/" + cost);
-        setupLabel(lblCost);
-        lblCost.setHorizontalAlignment(JLabel.LEFT);
-        displayGold.add(lblCost);
+        // //----> Current Gold Label <----
+        // lblCurrentGold.setText("" + currentGold);
+        // setupLabel(lblCurrentGold);
+        // if(currentGold < cost) lblCurrentGold.setForeground(Color.RED);
+        // lblCurrentGold.setHorizontalAlignment(JLabel.RIGHT);
+        // displayGold.add(lblCurrentGold);
 
-        costPanel.add(displayGold);
-        this.add(costPanel);
+        // //----> Price Label <----
+        // lblCost.setText("/" + cost);
+        // setupLabel(lblCost);
+        // lblCost.setHorizontalAlignment(JLabel.LEFT);
+        // displayGold.add(lblCost);
+
+        // descriptionPanel.add(displayGold);
+        this.add(descriptionPanel);
 
 
         //========== Quantity Panel ==========
 
-        JPanel quantityPanel = new JPanel();
         quantityPanel.setBackground(Color.BLACK);
         quantityPanel.setLayout(subLayout);
 
@@ -205,10 +365,139 @@ public class ItemPanel extends JPanel{
 
     private void createHealthPotion() {
 
+        this.cost = POTION_PRICE;
+        this.currentGold = player.getGold();
+        this.maxSupply = 20;
+        this.currentSupply = maxSupply;
+
+        GridLayout mainLayout = new GridLayout(4, 1);
+        mainLayout.setVgap(2);
+        this.setLayout(mainLayout);
+
+        //========== Item Label ==========
+        lblItem.setText(this.item);
+        setupLabel(lblItem);
+        lblItem.setFont(middleFont);
+        lblItem.setBackground(Color.DARK_GRAY);
+        lblItem.setOpaque(true);
+        this.add(lblItem);
+
+        //========== Description Panel ==========
+
+        GridLayout subLayout = new GridLayout(2, 1);
+        descriptionPanel.setBackground(Color.BLACK);
+        descriptionPanel.setLayout(subLayout);
+
+        JLabel lblLine1 = new JLabel("Restore 50% of");
+        setupLabel(lblLine1);
+        descriptionPanel.add(lblLine1);
+
+        JLabel lblLine2 = new JLabel("Missing Health");
+        setupLabel(lblLine2);
+        descriptionPanel.add(lblLine2);
+
+        this.add(descriptionPanel);
+
+
+        //========== Quantity Panel ==========
+
+        quantityPanel.setBackground(Color.BLACK);
+        quantityPanel.setLayout(subLayout);
+
+        JPanel displayQuantity = new JPanel();
+        displayQuantity.setLayout(new GridLayout(1, 2));
+        displayQuantity.setBackground(Color.BLACK);
+
+        //----> Current Supply Label <----
+        lblCurrentSupply.setText("" + currentSupply);
+        setupLabel(lblCurrentSupply);
+        if(currentSupply <= 0) lblCurrentSupply.setForeground(Color.RED);
+        lblCurrentSupply.setHorizontalAlignment(JLabel.RIGHT);
+        displayQuantity.add(lblCurrentSupply);
+
+        //----> Max Supply Label <----
+        lblMaxSupply.setText("/" + maxSupply);
+        setupLabel(lblMaxSupply);
+        lblMaxSupply.setHorizontalAlignment(JLabel.LEFT);
+        displayQuantity.add(lblMaxSupply);
+
+        quantityPanel.add(new JLabel());
+        quantityPanel.add(displayQuantity);
+        this.add(quantityPanel);
+
+
+        //========== Purchase Button ==========
+        btnBuy.setText("Purchase");
+        setupButton(btnBuy);
+        this.add(btnBuy);
     }
 
     private void createLevel() {
+        this.cost = LEVEL_PRICE;;
+        this.currentGold = player.getGold();
+        this.maxSupply = 20;
+        this.currentSupply = maxSupply;
 
+        GridLayout mainLayout = new GridLayout(4, 1);
+        mainLayout.setVgap(2);
+        this.setLayout(mainLayout);
+
+        //========== Item Label ==========
+        lblItem.setText(this.item);
+        setupLabel(lblItem);
+        lblItem.setFont(middleFont);
+        lblItem.setBackground(Color.DARK_GRAY);
+        lblItem.setOpaque(true);
+        this.add(lblItem);
+
+        //========== Description Panel ==========
+
+        GridLayout subLayout = new GridLayout(2, 1);
+        descriptionPanel.setBackground(Color.BLACK);
+        descriptionPanel.setLayout(subLayout);
+
+        JLabel lblLine1 = new JLabel("Gain a Level");
+        setupLabel(lblLine1);
+        descriptionPanel.add(lblLine1);
+
+        JLabel lblLine2 = new JLabel("");
+        setupLabel(lblLine2);
+        descriptionPanel.add(lblLine2);
+
+        this.add(descriptionPanel);
+
+
+        //========== Quantity Panel ==========
+
+        quantityPanel.setBackground(Color.BLACK);
+        quantityPanel.setLayout(subLayout);
+
+        JPanel displayQuantity = new JPanel();
+        displayQuantity.setLayout(new GridLayout(1, 2));
+        displayQuantity.setBackground(Color.BLACK);
+
+        //----> Current Supply Label <----
+        lblCurrentSupply.setText("" + currentSupply);
+        setupLabel(lblCurrentSupply);
+        if(currentSupply <= 0) lblCurrentSupply.setForeground(Color.RED);
+        lblCurrentSupply.setHorizontalAlignment(JLabel.RIGHT);
+        displayQuantity.add(lblCurrentSupply);
+
+        //----> Max Supply Label <----
+        lblMaxSupply.setText("/" + maxSupply);
+        setupLabel(lblMaxSupply);
+        lblMaxSupply.setHorizontalAlignment(JLabel.LEFT);
+        displayQuantity.add(lblMaxSupply);
+
+        quantityPanel.add(new JLabel());
+        quantityPanel.add(displayQuantity);
+        this.add(quantityPanel);
+
+
+        //========== Purchase Button ==========
+        btnBuy.setText("Purchase");
+        setupButton(btnBuy);
+        this.add(btnBuy);
     }
 
     private void createSkillPoint() {
@@ -250,9 +539,33 @@ public class ItemPanel extends JPanel{
         button.setFont(textFont);
         button.setForeground(Color.WHITE);
         button.setBackground(Color.DARK_GRAY);
+        button.setOpaque(true);
         button.setBorder(BorderFactory.createEtchedBorder());
-        button.setFocusPainted(false);
         button.addActionListener(this.listener);
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if(!soldOut) {
+                    button.setBackground(Color.GRAY);
+                    button.setText(cost + " Gold");
+
+                    if(currentGold < cost) button.setForeground(Color.RED);
+                    else button.setForeground(Color.GREEN);
+                }
+            }
+        
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(Color.DARK_GRAY);
+                if(!soldOut) {
+                    if(item == WEAPON || item == SHIELD || item == HELMET || item == ARMOUR || item == GLOVES) button.setText("Upgrade");
+                    else button.setText("Purchase");
+
+                    button.setForeground(Color.WHITE);
+                }
+            }
+        });
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
     public void paintComponent(Graphics g) {

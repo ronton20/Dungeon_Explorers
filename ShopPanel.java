@@ -17,6 +17,8 @@ public class ShopPanel extends JPanel implements ActionListener{
     private ActionListener listener;
 
     ItemPanel refillPot;
+    ItemPanel healthPot;
+    ItemPanel level;
 
     JPanel titlePanel = new JPanel();
     JPanel backPanel = new JPanel();
@@ -82,10 +84,12 @@ public class ShopPanel extends JPanel implements ActionListener{
         bodyPanel.setBackground(backgroundColor);
 
         refillPot = new ItemPanel(this.player, this, ItemPanel.POTION_REFILLABLE);
+        healthPot = new ItemPanel(this.player, this, ItemPanel.POTION);
+        level = new ItemPanel(this.player, this, ItemPanel.LEVEL);
 
-        bodyPanel.add(hpPanel);
-        bodyPanel.add(dmgPanel);
         bodyPanel.add(refillPot);
+        bodyPanel.add(healthPot);
+        bodyPanel.add(level);
         bodyPanel.add(new JPanel());
         bodyPanel.add(new JPanel());
         bodyPanel.add(new JPanel());

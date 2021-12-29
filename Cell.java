@@ -1,6 +1,6 @@
 import java.awt.*;
 
-public class Cell {
+public class Cell implements Comparable<Cell>{
 
     public static final String TOP = "Top";
     public static final String RIGHT = "Right";
@@ -176,5 +176,11 @@ public class Cell {
             if(leftWall)
                 g.drawLine(x, y + cellSize, x, y);                          //bottom left to top left
         }
+    }
+
+    @Override
+    public int compareTo(Cell o) {
+        // TODO Auto-generated method stub
+        return 0;
     }
 }
