@@ -27,7 +27,7 @@ public class SkillsPanel extends JPanel implements ActionListener{
     JLabel lblSkillPoints = new JLabel();
     JButton btnClose = new JButton();
 
-    Color backgroundColor = new Color(60, 60, 60);
+    Color backgroundColor = new Color(30, 30, 30);
 
     public SkillsPanel(Player player, ActionListener lis) {
         this.player = player;
@@ -66,6 +66,18 @@ public class SkillsPanel extends JPanel implements ActionListener{
         btnClose.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED, Color.WHITE, Color.GRAY));
         btnClose.setFocusPainted(false);
         btnClose.addActionListener(this.listener);
+        btnClose.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnClose.setBackground(Color.LIGHT_GRAY);
+                btnClose.setForeground(Color.BLACK);
+            }
+        
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnClose.setBackground(Color.BLACK);
+                btnClose.setForeground(Color.WHITE);
+            }
+        });
 
         this.add(btnClose);
 

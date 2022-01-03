@@ -41,7 +41,7 @@ public class ItemPanel extends JPanel{
 
     private boolean soldOut;
 
-    private final int POTION_PRICE = 50;
+    private final int POTION_PRICE = 30;
     private final int LEVEL_PRICE = 500;
     private final int SKILLPOINT_PRICE = 200;
     private final int GOAL_MAP_PRICE = 1000;
@@ -58,13 +58,13 @@ public class ItemPanel extends JPanel{
     private double statDef;
     private double statCritRate;
 
-    public static final double WEAPON_ATT_PER_RARITY = 0.05;
-    public static final double SHIELD_DEF_PER_RARITY = 0.05;
-    public static final double HELMET_DEF_PER_RARITY = 0.02;
-    public static final double HELMET_ATT_PER_RARITY = 0.01;
-    public static final double ARMOUR_DEF_PER_RARITY = 0.03;
-    public static final double ARMOUR_ATT_PER_RARITY = 0.02;
-    public static final double GLOVES_DEF_PER_RARITY = 0.01;
+    public static final double WEAPON_ATT_PER_RARITY = 0.10;
+    public static final double SHIELD_DEF_PER_RARITY = 0.10;
+    public static final double HELMET_DEF_PER_RARITY = 0.03;
+    public static final double HELMET_ATT_PER_RARITY = 0.03;
+    public static final double ARMOUR_DEF_PER_RARITY = 0.05;
+    public static final double ARMOUR_ATT_PER_RARITY = 0.05;
+    public static final double GLOVES_DEF_PER_RARITY = 0.02;
     public static final double GLOVES_CRIT_RATE_PER_RARITY = 0.30;
 
     public ItemPanel(Player player, ActionListener lis, String item) {
@@ -305,8 +305,8 @@ public class ItemPanel extends JPanel{
     }
 
     private void updateWeapon() {
-        lblCurrentGold.setText("" + player.getBaseDMG());
-        int attIncrease = (int)(player.getDMG() * WEAPON_ATT_PER_RARITY);
+        lblCurrentGold.setText("" + player.getDMG());
+        int attIncrease = (int)(player.getBaseDMG() * WEAPON_ATT_PER_RARITY);
         lblCost.setText(" +" + attIncrease);
     }
 
@@ -318,7 +318,7 @@ public class ItemPanel extends JPanel{
 
     private void updateHelmet() {
         lblCurrentGold.setText("" + player.getDMG());
-        int attIncrease = (int)(player.getDMG() * HELMET_ATT_PER_RARITY);
+        int attIncrease = (int)(player.getBaseDMG() * HELMET_ATT_PER_RARITY);
         lblCost.setText(" +" + attIncrease);
 
         lblCurrentSupply.setText((int)(player.getDefence() * 100) + "%");
@@ -328,7 +328,7 @@ public class ItemPanel extends JPanel{
 
     private void updateArmour() {
         lblCurrentGold.setText("" + player.getDMG());
-        int attIncrease = (int)(player.getDMG() * ARMOUR_ATT_PER_RARITY);
+        int attIncrease = (int)(player.getBaseDMG() * ARMOUR_ATT_PER_RARITY);
         lblCost.setText(" +" + attIncrease);
 
         lblCurrentSupply.setText((int)(player.getDefence() * 100) + "%");
@@ -732,7 +732,7 @@ public class ItemPanel extends JPanel{
         displayAtt.add(lblCurrentGold);
 
         //----> Added Value Label <----
-        int attIncrease = (int)(player.getDMG() * WEAPON_ATT_PER_RARITY);
+        int attIncrease = (int)(player.getBaseDMG() * WEAPON_ATT_PER_RARITY);
         lblCost.setText(" +" + attIncrease);
         setupLabel(lblCost);
         lblCost.setForeground(Color.GREEN);

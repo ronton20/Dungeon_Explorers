@@ -1,4 +1,8 @@
 import java.awt.*;
+import java.awt.image.*;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public abstract class Room {
     public static final int UP = 1;
@@ -8,7 +12,7 @@ public abstract class Room {
 
     public static final int rotationUp = 10;
     public static final int rotationRight = 11;
-    public static final int rotationDown = 11;
+    public static final int rotationDown = 12;
     public static final int rotationLeft = 13;
 
     public static final String CORRIDOR = "Corridor";
@@ -26,6 +30,9 @@ public abstract class Room {
     private String roomType;
     private int rotation;
 
+    private BufferedImage img;
+    private Image roomBackgroundImage;
+
     private final Color ROOM_COLOR = new Color(204, 102, 0);
 
     public Room(int rotation, String type) {
@@ -35,10 +42,17 @@ public abstract class Room {
 
         this.roomColor = ROOM_COLOR;
         this.mainColor = ROOM_COLOR;
+
+        generateBackground();
     }
 
     public Color getRoomColor() { return roomColor; }
     public String getType() { return roomType; }
+
+    public Image getBackgroundImage(int width, int height) { 
+        roomBackgroundImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        return roomBackgroundImage;
+    }
 
     public void setStartRoom() {
         roomType = Room.START_ROOM;
@@ -56,6 +70,50 @@ public abstract class Room {
         roomType = Room.TREASURE_ROOM;
         roomColor = Color.YELLOW;
         mainColor = Color.YELLOW;
+    }
+
+    private void generateBackground() {
+        this.img = null;
+        try {
+            switch (this.roomType) {
+                case CORRIDOR:
+                    if(rotation == rotationUp || rotation == rotationDown)      img = ImageIO.read(new File("Assets/Rooms/Corridor_Up.png"));
+                    if(rotation == rotationRight || rotation == rotationLeft)   img = ImageIO.read(new File("Assets/Rooms/Corridor_Right.png"));
+                    break;
+
+                case JUNKTION:
+                    if(rotation == rotationUp)      img = ImageIO.read(new File("Assets/Rooms/Junktion_Up.png"));
+                    if(rotation == rotationRight)   img = ImageIO.read(new File("Assets/Rooms/Junktion_Right.png"));
+                    if(rotation == rotationDown)    img = ImageIO.read(new File("Assets/Rooms/Junktion_Down.png"));
+                    if(rotation == rotationLeft)    img = ImageIO.read(new File("Assets/Rooms/Junktion_Left.png"));
+                break;
+
+                case CORNER:
+                    if(rotation == rotationUp)      img = ImageIO.read(new File("Assets/Rooms/Corner_Up.png"));
+                    if(rotation == rotationRight)   img = ImageIO.read(new File("Assets/Rooms/Corner_Right.png"));
+                    if(rotation == rotationDown)    img = ImageIO.read(new File("Assets/Rooms/Corner_Down.png"));
+                    if(rotation == rotationLeft)    img = ImageIO.read(new File("Assets/Rooms/Corner_Left.png"));
+                    break;
+
+                case DEAD_END:
+                    if(rotation == rotationUp)      img = ImageIO.read(new File("Assets/Rooms/Dead_End_Up.png"));
+                    if(rotation == rotationRight)   img = ImageIO.read(new File("Assets/Rooms/Dead_End_Right.png"));
+                    if(rotation == rotationDown)    img = ImageIO.read(new File("Assets/Rooms/Dead_End_Down.png"));
+                    if(rotation == rotationLeft)    img = ImageIO.read(new File("Assets/Rooms/Dead_End_Left.png"));
+                break;
+
+                case CROSS:
+                        img = ImageIO.read(new File("Assets/Rooms/Cross.png"));
+                    break;
+            
+                default:
+                    break;
+            }
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
     }
 
     public void draw(Graphics g,int width, int height) {

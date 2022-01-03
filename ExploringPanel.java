@@ -21,7 +21,9 @@ public class ExploringPanel extends JPanel implements ActionListener{
     LevelUpPanel lvlUpPanel;
     SkillsPanel skillsTab;
     ShopPanel shopPanel;
+    FightRecapPanel recapPanel;
     GameOverPanel gameOverPanel;
+    VictoryPanel victoryPanel;
 
     JButton btnUp = new JButton();
     JButton btnDown = new JButton();
@@ -36,6 +38,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
     Image imgSkillsAvailable;
     Image imgShop;
 
+    Image backgrondImage;
+
     private final int ICON_SIZE = 50;
 
     ActionListener listener;
@@ -45,16 +49,15 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
     float percentage = 0.5f;
 
-    private int WINDOW_HEIGHT = 720;
-    private int WINDOW_WIDTH = 1080;
+    private int WINDOW_HEIGHT;
+    private int WINDOW_WIDTH;
 
-    private final int BTN_WIDTH = WINDOW_WIDTH / 8;
-    private final int BTN_HEIGHT = WINDOW_HEIGHT / 8;
+    private int BTN_WIDTH;
+    private int BTN_HEIGHT;
 
     private boolean menuOpen;
 
     Cell[][] map;
-    int[][] mapIndicator;
     private final int MAP_SIZE = 10; 
     private final int START_ROOM_X = MAP_SIZE / 2;
     private final int START_ROOM_Y = MAP_SIZE - 1;
@@ -65,6 +68,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
     private boolean leveledUp;
     private boolean inSkillTab;
     private boolean inShopTab;
+    private boolean inRecap;
     private boolean gameOver;
 
     private int from;
@@ -75,7 +79,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
     MiniMap miniMap;
     private final int MINIMAP_SIZE = 200;
 
-    Player player = new Player(WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2, WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2, this);
+    Player player;
 
 
 
@@ -84,6 +88,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
         WINDOW_HEIGHT = height;
         WINDOW_WIDTH = width;
+        BTN_WIDTH = WINDOW_WIDTH / 4;
+        BTN_HEIGHT = WINDOW_HEIGHT / 4;
         listener = lis;
         bgColor = STARTING_COLOR;
         menuOpen = false;
@@ -91,22 +97,19 @@ public class ExploringPanel extends JPanel implements ActionListener{
         leveledUp = false;
         inSkillTab = false;
         inShopTab = false;
+        inRecap = false;
         this.gameOver = false;
         currentRoomX = START_ROOM_X;
         currentRoomY = START_ROOM_Y;
 
+        backgrondImage = null;
+
+        player = new Player(WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2, WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2, this);
+
         generateMap();
 
         map[currentRoomY][currentRoomX].playerEntered();
-
-        for(int i = 0; i < MAP_SIZE; i++) {
-            for (int j = 0; j < MAP_SIZE; j++) {
-                if(map[i][j] == null) System.out.print("null\t");
-                else if(map[i][j].getRoom() == null) System.out.print("0\t");
-                else System.out.print(map[i][j].getRoom().getType() + " , ");
-            }
-            System.out.println();
-        }
+        backgrondImage = map[currentRoomY][currentRoomX].getRoom().getBackgroundImage(WINDOW_WIDTH, WINDOW_HEIGHT);
 
         miniMap = new MiniMap(map);
         miniMap.setBounds(10, 10, MINIMAP_SIZE, MINIMAP_SIZE);
@@ -131,21 +134,21 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
         BufferedImage img = null;
         try {
-            img = ImageIO.read(new File("Skills_Normal.png"));
+            img = ImageIO.read(new File("Assets/Skills_Normal.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
         imgSkills = img.getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
 
         try {
-            img = ImageIO.read(new File("Skills_Available.png"));
+            img = ImageIO.read(new File("Assets/Skills_Available.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
         imgSkillsAvailable = img.getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_SMOOTH);
 
         try {
-            img = ImageIO.read(new File("Shop.png"));
+            img = ImageIO.read(new File("Assets/Shop.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -169,7 +172,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
         //----> Setting the button for going down <----
         setupButtons(btnDown);
-        btnDown.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT - BTN_HEIGHT * 2, BTN_WIDTH, BTN_HEIGHT);
+        btnDown.setBounds(WINDOW_WIDTH / 2 - BTN_WIDTH / 2, WINDOW_HEIGHT - BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
         add(btnDown);
 
         //----> Setting the button for going left <----
@@ -209,7 +212,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
     private void setupButtons(JButton btn) {
         btn.setOpaque(false);
         btn.setContentAreaFilled(false);
-        btn.setBorderPainted(true);
+        btn.setBorderPainted(false);
         btn.addActionListener(this);
     }
 
@@ -270,7 +273,6 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
     private void generateMap() {
         map = new Cell[MAP_SIZE][MAP_SIZE];
-        mapIndicator = new int[MAP_SIZE][MAP_SIZE];
         // stack = new Stack<>();       //if we wnat the maze to be generated in a DFS fashion
         queue = new PriorityQueue<>();  //if we wnat the maze to be generated in a BFS fashion
 
@@ -283,7 +285,6 @@ public class ExploringPanel extends JPanel implements ActionListener{
         map[START_ROOM_Y][START_ROOM_X].visited();
         map[START_ROOM_Y][START_ROOM_X].setColor(Color.GREEN);
 
-        mapIndicator[START_ROOM_Y][START_ROOM_X] = 1;
         goalRoomGenerated = false;
         
         createMap(map[START_ROOM_Y][START_ROOM_X]);
@@ -294,14 +295,13 @@ public class ExploringPanel extends JPanel implements ActionListener{
         for (int i = 0; i < map.length; i++) {
             for (int j = 0; j < map.length; j++) {
                 if(map[i][j] != null) {
-                    map[i][j].createRoom();
+                    if(i == START_ROOM_Y && j == START_ROOM_X) map[i][j].createStartRoom();
+                    else map[i][j].createRoom();
                     if(map[i][j].getRoom().getType() == Room.DEAD_END)
                         deadEndList.add(map[i][j].getRoom());
                 }
             }
         }
-        //Setting the starting room
-        map[START_ROOM_Y][START_ROOM_X].getRoom().setStartRoom();
 
         //generating the Goal room
         while(!goalRoomGenerated) {
@@ -400,6 +400,14 @@ public class ExploringPanel extends JPanel implements ActionListener{
         }
     }
 
+    private void fightRecap() {
+        inRecap = true;
+        recapPanel = new FightRecapPanel(map[currentRoomY][currentRoomX].getMonster(), this);
+        recapPanel.setVisible(true);
+        recapPanel.setBounds(getWidth() / 2 - getWidth() / 6, getHeight() / 2 - getHeight() / 6, getWidth() / 3, getHeight() / 3);
+        this.add(recapPanel);
+    }
+
     private void endBattle() {
         int prevLevel = player.getLevel();
         player.gainSpoils(map[currentRoomY][currentRoomX].getMonster());
@@ -409,8 +417,8 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
         if(leveledUp) {
             lvlUpPanel = new LevelUpPanel(player, this);
-            int width = getWidth() / 5;
-            int height = getHeight() / 4;
+            int width = getWidth() / 4;
+            int height = getHeight() / 3;
             lvlUpPanel.setBounds(getWidth() / 2 - width / 2, getHeight() / 2 - height / 2, width, height);
             this.add(lvlUpPanel);
             shopPanel.restock();
@@ -476,6 +484,16 @@ public class ExploringPanel extends JPanel implements ActionListener{
         this.add(gameOverPanel);
     }
 
+    private void victory() {
+        gameOver = true;
+        disableBackground();
+        victoryPanel = new VictoryPanel(listener);
+        int gameOverWidth = getWidth() / 3 * 2;
+        int gameOverHeight = getHeight() / 3 * 2;
+        victoryPanel.setBounds(getWidth() / 2 - gameOverWidth / 2, getHeight() / 2 - gameOverHeight / 2, gameOverWidth, gameOverHeight);
+        this.add(victoryPanel);
+    }
+
     private void revealGoalRoom() {
         for(int i = 0; i < MAP_SIZE; i++) {
             for(int j = 0; j < MAP_SIZE; j++) {
@@ -487,10 +505,20 @@ public class ExploringPanel extends JPanel implements ActionListener{
         }
     }
 
+    private void resetRooms() {
+        for(int i = 0; i < MAP_SIZE; i++) {
+            for(int j = 0; j < MAP_SIZE; j++) {
+                if(map[i][j].getRoom().getType() != Room.GOAL_ROOM)
+                    map[i][j].resetMonster();
+            }
+        }
+    }
+
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         graphic = g;
-        setBackground(map[currentRoomY][currentRoomX].getRoom().getRoomColor());
+        super.setBackground(Color.BLACK);
+        if(backgrondImage != null) g.drawImage(backgrondImage, 0, 0, null);
         player.draw();
         if(menuOpen) {
             g.setColor(new Color(0, 0, 0, 0.5f));
@@ -550,10 +578,14 @@ public class ExploringPanel extends JPanel implements ActionListener{
 
             if(e.getSource().equals(fightPanel.btnAttack)) {
                 if(e.getActionCommand() == "Monster Defeated") {
+                    if(map[currentRoomY][currentRoomX].getRoom().getType() == Room.GOAL_ROOM) {
+                        player.goalReached();
+                        resetRooms();
+                    }
                     fighting = false;
                     fightPanel.setVisible(false);
                     this.remove(fightPanel);
-                    endBattle();
+                    fightRecap();
                 }
 
                 if(e.getActionCommand() == "Player Defeated") {
@@ -562,6 +594,15 @@ public class ExploringPanel extends JPanel implements ActionListener{
                     this.remove(fightPanel);
                     gameOver();
                 }
+            }
+        }
+
+        if(inRecap) {
+            if(e.getSource().equals(recapPanel.btnContinue)) {
+                recapPanel.setVisible(false);
+                this.remove(recapPanel);
+                inRecap = false;
+                endBattle();
             }
         }
 
@@ -585,6 +626,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
         if(inSkillTab) {
             if(e.getSource().equals(skillsTab.btnClose)) {
                 closeSkills();
+                shopPanel.updateGold();
             }
         }
 
@@ -597,6 +639,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
                     map[currentRoomY][currentRoomX].playerLeft();
                     currentRoomY--;
                     map[currentRoomY][currentRoomX].playerEntered();
+                    backgrondImage = map[currentRoomY][currentRoomX].getRoom().getBackgroundImage(getWidth(), getHeight());
                 }
                 if(player.movedRoom && player.getY() <= WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2) {
                     this.from = Player.DOWN;
@@ -607,11 +650,16 @@ public class ExploringPanel extends JPanel implements ActionListener{
             else if(player.getDirection() == Player.DOWN) {
                 player.move(Player.DOWN);
                 if(!player.movedRoom && player.getY() >= WINDOW_HEIGHT - Player.PLAYER_SIZE) {
+                    if(map[currentRoomY][currentRoomX].getRoom().getType() == Room.START_ROOM) {
+                        victory();
+                        return;
+                    }
                     player.moveRoom(Player.DOWN);
                     player.movedRoom = true;
                     map[currentRoomY][currentRoomX].playerLeft();
                     currentRoomY++;
                     map[currentRoomY][currentRoomX].playerEntered();
+                    backgrondImage = map[currentRoomY][currentRoomX].getRoom().getBackgroundImage(getWidth(), getHeight());
                 }
                 if(player.movedRoom && player.getY() >= WINDOW_HEIGHT / 2 - Player.PLAYER_SIZE / 2) {
                     this.from = Player.UP;
@@ -627,6 +675,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
                     map[currentRoomY][currentRoomX].playerLeft();
                     currentRoomX--;
                     map[currentRoomY][currentRoomX].playerEntered();
+                    backgrondImage = map[currentRoomY][currentRoomX].getRoom().getBackgroundImage(getWidth(), getHeight());
                 }
                 if(player.movedRoom && player.getX() <= WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2) {
                     this.from = Player.RIGHT;
@@ -642,6 +691,7 @@ public class ExploringPanel extends JPanel implements ActionListener{
                     map[currentRoomY][currentRoomX].playerLeft();
                     currentRoomX++;
                     map[currentRoomY][currentRoomX].playerEntered();
+                    backgrondImage = map[currentRoomY][currentRoomX].getRoom().getBackgroundImage(getWidth(), getHeight());
                 }
                 if(player.movedRoom && player.getX() >= WINDOW_WIDTH / 2 - Player.PLAYER_SIZE / 2) {
                     this.from = Player.LEFT;

@@ -14,6 +14,7 @@ public class Player {
     public static final String NONE = "None";
     public static final String BLEED = "Bleed";
     public static final String POISON = "Poison";
+    public static final String BURN = "Burn";
 
     public static final int UP = 1;
     public static final int DOWN = 2;
@@ -38,7 +39,7 @@ public class Player {
     public static final int HP_PER_LEVEL = 5;
     public static final int DMG_PER_LEVEL = 2;
     public static final int SKILL_POINTS_PER_LEVEL = 3;
-    private final double EXP_PERCENT_PER_LEVEL = 0.2;
+    private final double EXP_PERCENT_PER_LEVEL = 0.3;
 
     private int maxEXP;
     private int currentEXP;
@@ -93,7 +94,7 @@ public class Player {
         this.baseDMG = DEFAULT_DMG;
         this.totalDMG = DEFAULT_DMG;
         this.level = DEFAULT_LEVEL;
-        this.gold = DEFAULT_GOLD + 10000;
+        this.gold = DEFAULT_GOLD;
         this.skillPointsHP = 0;
         this.skillPointsDMG = 0;
         this.skillPoints = 0;
@@ -114,7 +115,7 @@ public class Player {
 
         totalAttackBonus = 0;
         totalDefenceBonus = 0;
-        critRate = 0;
+        critRate = 0.1;
 
         dead = false;
 
@@ -123,7 +124,7 @@ public class Player {
 
         BufferedImage img = null;
         try {
-            img = ImageIO.read(new File("big-steve-face.png"));
+            img = ImageIO.read(new File("Assets/big-steve-face.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -213,6 +214,7 @@ public class Player {
         if(gold < price) return false;
         gold -= price;
         this.totalAttackBonus += attIncrease;
+        updateStats();
         return true;
     }
 
@@ -220,6 +222,7 @@ public class Player {
         if(gold < price) return false;
         gold -= price;
         this.totalDefenceBonus += defIncrease;
+        updateStats();
         return true;
     }
 
@@ -228,6 +231,7 @@ public class Player {
         gold -= price;
         this.totalAttackBonus += attIncrease;
         this.totalDefenceBonus += defIncrease;
+        updateStats();
         return true;
     }
 
@@ -236,6 +240,7 @@ public class Player {
         gold -= price;
         this.totalAttackBonus += attIncrease;
         this.totalDefenceBonus += defIncrease;
+        updateStats();
         return true;
     }
 
@@ -244,6 +249,7 @@ public class Player {
         gold -= price;
         this.critRate += critIncrease;
         this.totalDefenceBonus += defIncrease;
+        updateStats();
         return true;
     }
 
@@ -308,7 +314,6 @@ public class Player {
     public void gainSpoils(Monster monster) {
         this.gold += monster.getGold();
         earnEXP(monster.getEXP());
-        System.out.println(currentEXP + "/" + maxEXP + ", Level: " + level);
     }
 
     public void earnEXP(int exp) {

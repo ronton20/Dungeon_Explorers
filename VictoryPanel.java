@@ -7,7 +7,7 @@ import javax.swing.border.BevelBorder;
 import java.awt.event.*;
 import java.awt.*;
 
-public class GameOverPanel extends JPanel{
+public class VictoryPanel extends JPanel{
 
     Font titleFont = new Font("Times New Roman", Font.BOLD, 85);
     Font normalFont = new Font("Times New Roman", Font.PLAIN, 25);
@@ -15,20 +15,20 @@ public class GameOverPanel extends JPanel{
     private ActionListener listener;
 
     JButton btnQuit = new JButton();
-    JLabel lblDefeat = new JLabel();
+    JLabel lblVictory = new JLabel();
 
-    public GameOverPanel(ActionListener lis) {
+    public VictoryPanel(ActionListener lis) {
         this.listener = lis;
 
         this.setLayout(null);
 
         //setting up the label
-        lblDefeat.setText("D E F E A T");
-        lblDefeat.setHorizontalAlignment(JLabel.CENTER);
-        lblDefeat.setVerticalAlignment(JLabel.CENTER);
-        lblDefeat.setFont(titleFont);
-        lblDefeat.setForeground(Color.RED);
-        this.add(lblDefeat);
+        lblVictory.setText("V I C T O R Y");
+        lblVictory.setHorizontalAlignment(JLabel.CENTER);
+        lblVictory.setVerticalAlignment(JLabel.CENTER);
+        lblVictory.setFont(titleFont);
+        lblVictory.setForeground(Color.GREEN);
+        this.add(lblVictory);
 
         //setting up the button
         btnQuit.setText("Exit to Title");
@@ -65,6 +65,6 @@ public class GameOverPanel extends JPanel{
         int btnWidth = getWidth() / 3;
         int btnHeight = btnWidth / 3;
         btnQuit.setBounds(getWidth() / 2 - btnWidth / 2, getHeight() - btnHeight - 10, btnWidth, btnHeight);
-        lblDefeat.setBounds(0, getHeight() / 2 - getHeight() / 8, getWidth(), getHeight() / 4);
+        lblVictory.setBounds(0, getHeight() / 2 - getHeight() / 8, getWidth(), getHeight() / 4);
     }
 }

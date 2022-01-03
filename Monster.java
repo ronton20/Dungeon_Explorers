@@ -12,12 +12,12 @@ public abstract class Monster {
     public final int DEFAULT_CURRENT_HP = DEFAULT_MAX_HP;
     public final int DEFAULT_DMG = 5;
     public final int DEFAULT_LEVEL = 1;
-    public final int DEFAULT_GOLD = 5;
-    public final int DEFAULT_EXP = 40;
+    public final int DEFAULT_GOLD = 10;
+    public final int DEFAULT_EXP = 50;
 
     private final int HP_PER_LEVEL = 15;
-    private final int DMG_PER_LEVEL = 3;
-    private final int GOLD_PER_LEVEL = 5;
+    private final int DMG_PER_LEVEL = 5;
+    private final int GOLD_PER_LEVEL = 20;
     private final double EXP_PER_LEVEL = 0.2;
 
     private boolean dead;
@@ -34,10 +34,10 @@ public abstract class Monster {
 
     public Monster(int level) {
         this.level = level;
-        this.maxHP = DEFAULT_MAX_HP + (((int)(Math.random() * HP_PER_LEVEL) + 5) * level);
+        this.maxHP = DEFAULT_MAX_HP + (((int)(Math.random() * HP_PER_LEVEL) + HP_PER_LEVEL) * level);
         this.currentHP = this.maxHP;
-        this.DMG = DEFAULT_DMG + (((int)(Math.random() * DMG_PER_LEVEL) + 1) * level);
-        this.gold = DEFAULT_GOLD + (((int)(Math.random() * GOLD_PER_LEVEL) + 1) * this.level);
+        this.DMG = DEFAULT_DMG + (((int)(Math.random() * DMG_PER_LEVEL) - DMG_PER_LEVEL / 2) * this.level);
+        this.gold = DEFAULT_GOLD + (((int)(Math.random() * GOLD_PER_LEVEL) - GOLD_PER_LEVEL / 2) * this.level);
         this.EXP = DEFAULT_EXP + (int)(DEFAULT_EXP * EXP_PER_LEVEL) * this.level;
     }
 
@@ -45,8 +45,17 @@ public abstract class Monster {
         this.level = level;
         this.maxHP = DEFAULT_MAX_HP + (((int)(Math.random() * HP_PER_LEVEL) + 5) * level);
         this.currentHP = this.maxHP;
-        this.DMG = basicDmg + (((int)(Math.random() * DMG_PER_LEVEL) + 1) * level);
+        this.DMG = basicDmg + (((int)(Math.random() * DMG_PER_LEVEL) - DMG_PER_LEVEL / 2) * level);
         this.gold = DEFAULT_GOLD + (((int)(Math.random() * GOLD_PER_LEVEL) + 1) * this.level);
+        this.EXP = DEFAULT_EXP + (int)(DEFAULT_EXP * EXP_PER_LEVEL) * this.level;
+    }
+
+    public Monster(int level, int basicHP, int basicDmg, int basicGold) {
+        this.level = level;
+        this.maxHP = basicHP + (((int)(Math.random() * HP_PER_LEVEL) + 5) * level);
+        this.currentHP = this.maxHP;
+        this.DMG = basicDmg + (((int)(Math.random() * DMG_PER_LEVEL) - DMG_PER_LEVEL / 2) * level);
+        this.gold = basicGold + (((int)(Math.random() * GOLD_PER_LEVEL) + 1) * this.level);
         this.EXP = DEFAULT_EXP + (int)(DEFAULT_EXP * EXP_PER_LEVEL) * this.level;
     }
 

@@ -60,6 +60,7 @@ public class Cell implements Comparable<Cell>{
     public boolean canGoDown()      { return !bottomWall; }
     public boolean canGoLeft()      { return !leftWall; }
     public Monster getMonster()     { return monster; }
+    public void resetMonster()      { this.monster = null; }
     
     public void removeWall(String wall) {
         switch (wall) {
@@ -107,13 +108,26 @@ public class Cell implements Comparable<Cell>{
         if(!topWall && !rightWall && !bottomWall && !leftWall) { room = new Cross(Room.rotationUp); return;}
     }
 
+    public void createStartRoom() {
+        bottomWall = false;
+        createRoom();
+        bottomWall = true;
+        room.setStartRoom();
+    }
+
+    public void unlockExit() { if(room.getType() == Room.START_ROOM) { bottomWall = false; } }
+
     public boolean needToFight() {
-        if(room.getType() == Room.START_ROOM || room.getType() == Room.GOAL_ROOM || room.getType() == Room.TREASURE_ROOM) return false;
+        if(room.getType() == Room.START_ROOM  || room.getType() == Room.TREASURE_ROOM) return false;
         if(monster.isDead()) return false;
         return true;
     }
 
     public void generateMonster(int level) {
+        if(room.getType() == Room.GOAL_ROOM) {
+            generateBoss();
+            return;
+        }
         String[] monsters = {"Wolf", "Bear", "Wraith", "Ghost", "Zombie", "Skeleton", "Thief"};
         int rand = (int)(Math.random() * monsters.length);
         int monsterLevel = (int)(Math.random() * 4) - 2 + level;
@@ -141,6 +155,26 @@ public class Cell implements Comparable<Cell>{
                 break;
             case "Thief":
                 monster = new Thief(monsterLevel);
+                break;
+        
+            default:
+                break;
+        }
+    }
+
+    private void generateBoss() {
+        String[] bosses = {Boss.DRAGON, Boss.ELDER_LICH, Boss.CERBERUS};
+        int rand = (int)(Math.random() * bosses.length);
+
+        switch (bosses[rand]) {
+            case Boss.DRAGON:
+                monster = new Dragon();
+                break;
+            case Boss.ELDER_LICH:
+                monster = new ElderLich();
+                break;
+            case Boss.CERBERUS:
+                monster = new Cerberus();
                 break;
         
             default:

@@ -28,16 +28,26 @@ public class DungeonAdventure implements ActionListener {
     Font titleFont = new Font("Times New Roman", Font.PLAIN, 55);
     Font normalFont = new Font("Times New Roman", Font.BOLD, 25);
 
-    private final int WINDOW_HEIGHT = 720;
-    private final int WINDOW_WIDTH = 1080;
+    Toolkit toolkit = Toolkit.getDefaultToolkit();
+    Dimension screen = toolkit.getScreenSize();
+
+    private final int WINDOW_HEIGHT = (int)screen.getHeight() / 5 * 4;
+    private final int WINDOW_WIDTH = (int)screen.getWidth() / 4 * 3;
 
     private boolean menuOpen;
+
+    TimerPanel timerPanel = new TimerPanel();
+
+    JLabel lblDummy = new JLabel();
+
+
+
 
     public DungeonAdventure() {
 
         BufferedImage img = null;
         try {
-            img = ImageIO.read(new File("Title_Image.jpg"));
+            img = ImageIO.read(new File("Assets/Title_Image.jpg"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -47,17 +57,20 @@ public class DungeonAdventure implements ActionListener {
         menuBackgroundImage.setBounds(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
         menuOpen = false;
-        gamePanel = new ExploringPanel(WINDOW_WIDTH, WINDOW_HEIGHT, this);
+        gamePanel = null;
 
-        mainPanel.setBackground(Color.DARK_GRAY);
+        mainPanel.setBackground(Color.BLACK);
+        mainPanel.setBounds(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT / 10 * 9);
         buttonPanel.setBackground(Color.BLACK);
+        buttonPanel.setLayout(new GridLayout(1, 3));
+        buttonPanel.setBounds(0, WINDOW_HEIGHT - WINDOW_HEIGHT / 10 - 5, WINDOW_WIDTH, WINDOW_HEIGHT / 15);
 
         mainPanel.setLayout(null);
 
         //----> Setting the title screen label <----
         lblTitle.setForeground(Color.WHITE);
         lblTitle.setSize(WINDOW_WIDTH / 5 * 2, WINDOW_HEIGHT / 6);
-        lblTitle.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        lblTitle.setHorizontalAlignment(JLabel.CENTER);
         lblTitle.setFont(titleFont);
         menuTitlePanel.setOpaque(false);
         menuTitlePanel.setBounds(WINDOW_WIDTH / 2 - lblTitle.getWidth() / 2, 50, lblTitle.getWidth(), lblTitle.getHeight());
@@ -68,13 +81,16 @@ public class DungeonAdventure implements ActionListener {
         mainPanel.setComponentZOrder(menuTitlePanel, 0);
 
         //----> Setting the title screen button <----
+
         btnStart.setBackground(Color.BLACK);
         btnStart.setForeground(Color.WHITE);
         btnStart.setBorder(BorderFactory.createEmptyBorder());
         btnStart.setFont(normalFont);
         btnStart.addActionListener(this);
         btnStart.setFocusPainted(false);
+        buttonPanel.add(timerPanel);
         buttonPanel.add(btnStart);
+        buttonPanel.add(lblDummy);
 
         //----> Setting the game screen menu button <----
         btnMenu.setBackground(Color.BLACK);
@@ -85,28 +101,37 @@ public class DungeonAdventure implements ActionListener {
         btnMenu.addActionListener(this);
 
         
-        window.add(mainPanel, BorderLayout.CENTER);
-        window.add(buttonPanel, BorderLayout.PAGE_END);
 
+        window.setLayout(null);
+        window.setBackground(Color.BLACK);
         window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        window.setLocationByPlatform(true);
+        window.setLocationRelativeTo(null);
         window.setResizable(false);
         window.setVisible(true);
 
+        window.add(mainPanel, BorderLayout.CENTER);
+        window.add(buttonPanel, BorderLayout.PAGE_END);
     }
 
     //this method starts the game
     private void startGame() {
         mainPanel.setVisible(false);
-        window.remove(gamePanel);
-        gamePanel = new ExploringPanel(WINDOW_WIDTH, WINDOW_HEIGHT, this);
+        if(gamePanel != null) { window.remove(gamePanel); }
+        gamePanel = new ExploringPanel(WINDOW_WIDTH, WINDOW_HEIGHT / 10 * 9, this);
+        gamePanel.setBounds(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT / 10 * 9);
         gamePanel.setBackground(Color.BLACK);
-        window.add(gamePanel, BorderLayout.CENTER);
+        window.add(gamePanel);
         gamePanel.setVisible(true);
         btnStart.setVisible(false);
+        buttonPanel.remove(btnStart);
+        buttonPanel.remove(lblDummy);
         btnMenu.setVisible(true);
         buttonPanel.add(btnMenu);
+        buttonPanel.add(lblDummy);
+
+        // timerPanel.showTimer();
+        // timerPanel.startTimer();
     }
 
     //this method starts the game
@@ -117,8 +142,14 @@ public class DungeonAdventure implements ActionListener {
         btnMenu.setVisible(false);
         btnStart.setVisible(true);
         buttonPanel.remove(btnMenu);
+        buttonPanel.remove(lblDummy);
         mainPanel.setVisible(true);
         buttonPanel.add(btnStart);
+        buttonPanel.add(lblDummy);
+
+        // timerPanel.stopTimer();
+        // timerPanel.hideTimer();
+        // timerPanel.resetTimer();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -133,11 +164,13 @@ public class DungeonAdventure implements ActionListener {
             if(gamePanel.inShopTab()) return;
             if(gamePanel.isGameOver()) return;
             if(!menuOpen) {
+                // timerPanel.stopTimer();
                 gamePanel.openMenu();
                 btnMenu.setText("Close");
                 menuOpen = true;
             }
             else {
+                // timerPanel.startTimer();
                 gamePanel.closeMenu();
                 btnMenu.setText("Menu");
                 menuOpen = false;
@@ -145,6 +178,7 @@ public class DungeonAdventure implements ActionListener {
         }
         //returning to the game
         if(e.getSource().equals(gamePanel.menuBoxPanel.btnResume)) {
+            // timerPanel.startTimer();
             gamePanel.closeMenu();
             btnMenu.setText("Menu");
             menuOpen = false;
@@ -158,6 +192,9 @@ public class DungeonAdventure implements ActionListener {
 
         if(gamePanel.isGameOver()) {
             if(e.getSource().equals(gamePanel.gameOverPanel.btnQuit)) {
+                goToTitle();
+            }
+            if(e.getSource().equals(gamePanel.victoryPanel.btnQuit)) {
                 goToTitle();
             }
         }

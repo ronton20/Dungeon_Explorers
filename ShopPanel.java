@@ -75,6 +75,18 @@ public class ShopPanel extends JPanel implements ActionListener{
         btnClose.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED, Color.WHITE, Color.GRAY));
         btnClose.setFocusPainted(false);
         btnClose.addActionListener(this.listener);
+        btnClose.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnClose.setBackground(Color.LIGHT_GRAY);
+                btnClose.setForeground(Color.BLACK);
+            }
+        
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnClose.setBackground(Color.BLACK);
+                btnClose.setForeground(Color.WHITE);
+            }
+        });
 
         this.add(btnClose);
 

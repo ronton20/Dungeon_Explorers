@@ -144,6 +144,18 @@ public class FightPanel extends JPanel implements ActionListener{
         btn.setBackground(Color.DARK_GRAY);
         btn.setBorder(BorderFactory.createEtchedBorder());
         btn.setFocusPainted(false);
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.LIGHT_GRAY);
+                btn.setForeground(Color.BLACK);
+            }
+        
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.DARK_GRAY);
+                btn.setForeground(Color.WHITE);
+            }
+        });
     }
 
     private void setupLabel(JLabel label) {
@@ -179,7 +191,7 @@ public class FightPanel extends JPanel implements ActionListener{
             if(!monster.isDead()) {
                 dmgDealt = monster.attack(player);
                 playerHP.updateHealth(player.getCurrentHP());
-                lblMonsterAction.setText("The " + monster.getName() + " dealt " + dmgDealt + "damage!");
+                lblMonsterAction.setText("The " + monster.getName() + " dealt " + dmgDealt + " damage!");
                 if(player.isDead())
                     listener.actionPerformed(new ActionEvent(btnAttack, ActionEvent.ACTION_PERFORMED, "Player Defeated") {
                         //Nothing need go here, the actionPerformed method (with the

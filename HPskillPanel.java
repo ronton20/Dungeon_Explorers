@@ -86,12 +86,24 @@ public class HPskillPanel extends JPanel{
     }
 
     private void setupButton(JButton button) {
-        button.setFont(textFont);
+        button.setFont(middleFont);
         button.setForeground(Color.WHITE);
         button.setBackground(Color.DARK_GRAY);
         button.setBorder(BorderFactory.createEtchedBorder());
         button.setFocusPainted(false);
         button.addActionListener(this.listener);
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(Color.LIGHT_GRAY);
+                button.setForeground(Color.BLACK);
+            }
+        
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(Color.DARK_GRAY);
+                button.setForeground(Color.WHITE);
+            }
+        });
     }
 
     public void updateCurrentHP() { lblcurrentHP.setText("" + player.getMaxHP()); }

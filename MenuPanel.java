@@ -49,6 +49,18 @@ public class MenuPanel extends JPanel{
         btn.setFont(normalFont);
         btn.setFocusPainted(false);
         btn.addActionListener(listener);
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.LIGHT_GRAY);
+                btn.setForeground(Color.BLACK);
+            }
+        
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.DARK_GRAY);
+                btn.setForeground(Color.WHITE);
+            }
+        });
     }
 
     public void paintComponent(Graphics g) {
